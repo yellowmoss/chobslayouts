@@ -6,64 +6,50 @@
   <title>{{ .Title }}</title>
 
   <style>
-    /* 1. Reset */
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
-
+    /* 1. Reset & Full-Screen Viewport Lock */
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      background-color: #000; /* Letterbox / pillarbox background */
-      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #000;
       overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
 
-    /* 2. Full-Screen Centering Shell */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    /* 2. Universal Stage */
     .viewport-stage {
       width: 100%;
       height: 100%;
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
+      padding: 1rem;
     }
 
-    /* 3. The Industry-Standard Responsive Video Box 
-       Uses width: 100% and padding-bottom: 56.25% (which is 9/16). 
-       This forces the container to maintain a perfect 16:9 box that fills 
-       the available width on mobile phones instantly. */
-    .video-wrapper {
+    /* 3. LANDSCAPE VIDEO WRAPPER (16:9) */
+    .video-wrapper.landscape {
       position: relative;
-      width: 100%;
-      max-width: 100vw;
-      max-height: 100vh;
+      width: min(100vw, 100vh * (16 / 9));
+      height: min(100vh, 100vw / (16 / 9));
       aspect-ratio: 16 / 9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
     }
 
-    /* On wide desktop/laptop screens, restrict the width 
-       so it doesn't stretch past the screen height */
-    @media (min-aspect-ratio: 16/9) {
-      .video-wrapper {
-        width: auto;
-        height: 100vh;
-      }
+    /* 4. PORTRAIT VIDEO WRAPPER (9:16) */
+    .video-wrapper.portrait {
+      position: relative;
+      width: min(100vw, 100vh * (9 / 16));
+      height: min(100vh, 100vw / (9 / 16));
+      aspect-ratio: 9 / 16;
     }
 
-    /* On tall smartphone screens, restrict the height 
-       so it doesn't stretch past the screen width */
-    @media (max-aspect-ratio: 16/9) {
-      .video-wrapper {
-        width: 100vw;
-        height: auto;
-      }
-    }
-
-    /* 4. The Video / Iframe fills the container completely */
+    /* 5. Universal Iframe/Video Fill */
     .video-wrapper iframe,
     .video-wrapper video,
     .video-wrapper .video-container {
@@ -73,23 +59,18 @@
       width: 100%;
       height: 100%;
       border: 0;
+      margin: 0;
+      border-radius: 12px;
     }
   </style>
 </head>
 <body>
-
-  <div class="viewport-stage">
-
     {{ partial "header.html" . }}
 
-    <div class="video-wrapper">
-      {{ block "main" . }}{{ end }}
-    </div>
-
-    {{ partial "footer.html" . }}
-
-
+  <div class="viewport-stage">
+    {{ block "main" . }}{{ end }}
   </div>
+    {{ partial "footer.html" . }}
 
 </body>
 </html>
