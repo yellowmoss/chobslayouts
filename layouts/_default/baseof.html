@@ -6,67 +6,88 @@
   <title>{{ .Title }}</title>
 
   <style>
-    /* 1. Reset: Full height and width context for the document */
+    /* 1. Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      background-color: #000;
-      overflow-x: hidden;
+      background-color: #000; /* Letterbox / pillarbox background */
       font-family: system-ui, -apple-system, sans-serif;
+      overflow: hidden;
     }
 
-    /* 2. The Full-Screen Flex Stage 
-       This centers the video frame perfectly on both wide laptops and tall mobile screens */
-    .page-wrapper {
+    /* 2. Full-Screen Centering Shell */
+    .viewport-stage {
       width: 100%;
-      min-height: 100%;
+      height: 100%;
       display: flex;
-      flex-direction: column;
-      justify-content: center;
       align-items: center;
-      padding: 1rem;
-      box-sizing: border-box;
+      justify-content: center;
     }
 
-    /* 3. The Video Scaling Box 
-       By using a max-width combined with 100% width and aspect-ratio, 
-       the browser automatically calculates the largest possible size 
-       that fits the screen without cropping. */
-    .video-scaler {
-      width: 100%;
-      max-width: calc(100vh * (16 / 9)); /* Caps width based on available height on wide screens */
-      max-height: calc(100vw * (9 / 16)); /* Caps height based on available width on tall screens */
-      aspect-ratio: 16 / 9;
+    /* 3. The Industry-Standard Responsive Video Box 
+       Uses width: 100% and padding-bottom: 56.25% (which is 9/16). 
+       This forces the container to maintain a perfect 16:9 box that fills 
+       the available width on mobile phones instantly. */
+    .video-wrapper {
       position: relative;
+      width: 100%;
+      max-width: 100vw;
+      max-height: 100vh;
+      aspect-ratio: 16 / 9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    /* 4. The Iframe / Video fills the scaler bounds precisely */
-    .video-scaler iframe,
-    .video-scaler video,
-    .video-scaler .video-container {
+    /* On wide desktop/laptop screens, restrict the width 
+       so it doesn't stretch past the screen height */
+    @media (min-aspect-ratio: 16/9) {
+      .video-wrapper {
+        width: auto;
+        height: 100vh;
+      }
+    }
+
+    /* On tall smartphone screens, restrict the height 
+       so it doesn't stretch past the screen width */
+    @media (max-aspect-ratio: 16/9) {
+      .video-wrapper {
+        width: 100vw;
+        height: auto;
+      }
+    }
+
+    /* 4. The Video / Iframe fills the container completely */
+    .video-wrapper iframe,
+    .video-wrapper video,
+    .video-wrapper .video-container {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
       border: 0;
-      margin: 0;
-      border-radius: 12px;
     }
   </style>
 </head>
 <body>
 
-  <div class="page-wrapper">
+  <div class="viewport-stage">
+
     {{ partial "header.html" . }}
 
-    <div class="video-scaler">
+    <div class="video-wrapper">
       {{ block "main" . }}{{ end }}
     </div>
 
     {{ partial "footer.html" . }}
+
 
   </div>
 
