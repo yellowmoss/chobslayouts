@@ -2,12 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <!-- 1. REQUIRED: Forces your 1220px phone to use logical CSS pixels (~412px) instead of zooming out -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>{{ .Title }}</title>
 
   <style>
-    /* 2. YOUTUBE'S ROOT SCALE: 1rem = 10px predictable baseline, prevents mobile font shrinking */
+    /* 1. Root Scale: 1rem = 10px predictable baseline */
     html {
       font-size: 10px;
       -webkit-text-size-adjust: 100%;
@@ -19,28 +18,46 @@
     }
 
     body {
-      font-family: "Roboto", system-ui, -apple-system, sans-serif;
-      font-size: 1.6rem; /* Exact 16px readable body text on both phone and laptop */
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 1.6rem; /* 16px readable text on phone & laptop */
       line-height: 1.6;
       color: #0f0f0f;
       margin: 0 auto;
-      padding: 1.6rem; /* 16px comfortable mobile gutter */
+      padding: 1.6rem;
       max-width: 1400px;
     }
 
     h1 {
-      font-size: 2.4rem; /* 24px on mobile */
+      font-size: 2.4rem;
       line-height: 1.25;
       margin: 0 0 1.6rem 0;
     }
 
     h2 {
-      font-size: 2.0rem; /* 20px on mobile */
+      font-size: 2.0rem;
       line-height: 1.3;
       margin: 2.4rem 0 1.2rem 0;
     }
 
-    /* 3. GALLERY GRID: Full-width 1-column cards on phone, 2-column grid on laptop */
+    /* 2. RAW VIMEO EMBEDS: Targets pasted <iframe> tags directly without needing wrapper divs */
+    iframe[src*="player.vimeo.com"],
+    .video-container iframe {
+      display: block;
+      width: 100% !important;
+      height: auto !important;
+      aspect-ratio: 16 / 9;
+      border: 0;
+      border-radius: 12px;
+      margin: 2.0rem 0;
+    }
+
+    /* Optional wrapper support if you still use .video-container anywhere */
+    .video-container {
+      width: 100%;
+      margin: 2.0rem 0;
+    }
+
+    /* 3. GALLERY GRID: 1 column on phone, 2 columns on laptop */
     .gallery-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -59,40 +76,26 @@
 
     .gallery-grid img {
       width: 100%;
-      max-width: 100%; /* Fills the entire phone width cleanly */
+      max-width: 100%;
       height: auto;
       display: block;
       margin: 0;
-      border-radius: 12px; /* YouTube-style rounded media corners */
-    }
-
-    /* Responsive 16:9 Video Container */
-    .video-container {
-      width: 100%;
-      aspect-ratio: 16 / 9;
-      margin: 2.0rem 0;
-    }
-
-    .video-container iframe {
-      width: 100%;
-      height: 100%;
-      border: 0;
       border-radius: 12px;
     }
 
-    /* 4. DESKTOP / LAPTOP BREAKPOINT (Triggers on your 1920x1080 laptop, ignored by your phone) */
+    /* 4. DESKTOP / LAPTOP BREAKPOINT (1920x1080) */
     @media (min-width: 768px) {
       body {
         padding: 3.2rem;
-        font-size: 1.7rem; /* 17px on desktop */
+        font-size: 1.7rem;
       }
 
       h1 {
-        font-size: 3.2rem; /* 32px on desktop */
+        font-size: 3.2rem;
       }
 
       h2 {
-        font-size: 2.4rem; /* 24px on desktop */
+        font-size: 2.4rem;
       }
 
       .gallery-grid {
@@ -105,85 +108,6 @@
       }
     }
   </style>
-
-
-
-<style>
-  /* Base fluid typography setup - bumped up for better mobile readability */
-  :root {
-    font-size: clamp(1.125rem, 1rem + 0.75vw, 1.25rem);
-  }
-
-  body {
-    font-family: system-ui, -apple-system, sans-serif;
-    line-height: 1.6;
-    color: #222;
-    padding: clamp(1rem, 3vw, 2rem); 
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-
-  /* Fluid headings */
-  h1 {
-    font-size: clamp(2rem, 1.75rem + 2vw, 2.8rem);
-  }
-
-  h2 {
-    font-size: clamp(1.5rem, 1.35rem + 1.2vw, 2.2rem);
-  }
-
-  /* --- Responsive Gallery Grid --- */
-  .gallery-grid {
-    display: grid !important;
-    grid-template-columns: 1fr !important; /* 1 column on mobile */
-    gap: 16px !important;
-    width: 100% !important;
-    max-width: 1400px !important;
-    margin: 1.5rem 0 !important;
-    padding: 0 !important;
-  }
-
-  /* Expand to 2 columns on tablets/desktops */
-  @media (min-width: 768px) {
-    .gallery-grid {
-      grid-template-columns: repeat(2, 1fr) !important;
-      gap: 20px !important;
-    }
-  }
-
-  .gallery-grid a {
-    display: block !important;
-    width: 100% !important;
-    text-align: left !important;
-  }
-
-  .gallery-grid img {
-    width: 100% !important;
-    max-width: 700px !important;
-    height: auto !important;
-    display: block !important;
-    margin: 0 auto !important;
-    border-radius: 6px !important;
-  }
-
-  /* --- Modern Responsive Video Container --- */
-  .video-container {
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    margin: 1.5rem 0;
-  }
-
-  .video-container iframe {
-    width: 100%;
-    height: 100%;
-    border: 0;
-    border-radius: 6px;
-  }
-</style>
-
-
-
-
 </head>
 <body>
 
