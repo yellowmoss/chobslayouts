@@ -6,33 +6,46 @@
   <title>{{ .Title }}</title>
 
   <style>
-    /* 1. Reset: Lock the page to the exact viewport bounds, zero scroll */
+    /* 1. Reset: Full height and width context for the document */
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      background-color: #000; /* Letterbox / pillarbox background */
-      overflow: hidden;
+      background-color: #000;
+      overflow-x: hidden;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+
+    /* 2. The Full-Screen Flex Stage 
+       This centers the video frame perfectly on both wide laptops and tall mobile screens */
+    .page-wrapper {
+      width: 100%;
+      min-height: 100%;
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
+      padding: 1rem;
+      box-sizing: border-box;
     }
 
-    /* 2. The Scaling Container 
-       This strictly enforces our 16:9 bounds relative to the viewport dimensions */
-    .video-viewport-scaler {
-      position: relative;
-      /* The magic CSS math: automatically chooses width/height based on viewport orientation */
-      width: min(100vw, 100vh * (16 / 9));
-      height: min(100vh, 100vw / (16 / 9));
+    /* 3. The Video Scaling Box 
+       By using a max-width combined with 100% width and aspect-ratio, 
+       the browser automatically calculates the largest possible size 
+       that fits the screen without cropping. */
+    .video-scaler {
+      width: 100%;
+      max-width: calc(100vh * (16 / 9)); /* Caps width based on available height on wide screens */
+      max-height: calc(100vw * (9 / 16)); /* Caps height based on available width on tall screens */
       aspect-ratio: 16 / 9;
+      position: relative;
     }
 
-    /* 3. The Video / Iframe fills the scaler container perfectly */
-    .video-viewport-scaler iframe,
-    .video-viewport-scaler video,
-    .video-viewport-scaler .video-container {
+    /* 4. The Iframe / Video fills the scaler bounds precisely */
+    .video-scaler iframe,
+    .video-scaler video,
+    .video-scaler .video-container {
       position: absolute;
       top: 0;
       left: 0;
@@ -40,20 +53,22 @@
       height: 100%;
       border: 0;
       margin: 0;
+      border-radius: 12px;
     }
   </style>
 </head>
 <body>
+
+  <div class="page-wrapper">
     {{ partial "header.html" . }}
 
-  <!-- Hugo injects the video content here, perfectly scaled to the viewport -->
-  <div class="video-viewport-scaler">
-    {{ block "main" . }}{{ end }}
-  </div>
+    <div class="video-scaler">
+      {{ block "main" . }}{{ end }}
+    </div>
 
     {{ partial "footer.html" . }}
 
+  </div>
 
 </body>
 </html>
-
