@@ -1,15 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+  <meta charset="utf-8">
+  <!-- 1. REQUIRED: Forces your 1220px phone to use logical CSS pixels (~412px) instead of zooming out -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>{{ .Title }}</title>
 
-    <!-- CRITICAL: Tells mobile browsers to scale text and layout properly -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    /* 2. YOUTUBE'S ROOT SCALE: 1rem = 10px predictable baseline, prevents mobile font shrinking */
+    html {
+      font-size: 10px;
+      -webkit-text-size-adjust: 100%;
+      box-sizing: border-box;
+    }
 
-    <title>{{ .Title }}</title>
-    
-    <!-- Gallery CSS: 2-column, left-aligned, capped at 700px -->
+    *, *::before, *::after {
+      box-sizing: inherit;
+    }
 
+    body {
+      font-family: "Roboto", system-ui, -apple-system, sans-serif;
+      font-size: 1.6rem; /* Exact 16px readable body text on both phone and laptop */
+      line-height: 1.6;
+      color: #0f0f0f;
+      margin: 0 auto;
+      padding: 1.6rem; /* 16px comfortable mobile gutter */
+      max-width: 1400px;
+    }
+
+    h1 {
+      font-size: 2.4rem; /* 24px on mobile */
+      line-height: 1.25;
+      margin: 0 0 1.6rem 0;
+    }
+
+    h2 {
+      font-size: 2.0rem; /* 20px on mobile */
+      line-height: 1.3;
+      margin: 2.4rem 0 1.2rem 0;
+    }
+
+    /* 3. GALLERY GRID: Full-width 1-column cards on phone, 2-column grid on laptop */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2.0rem;
+      width: 100%;
+      max-width: 1400px;
+      margin: 2.0rem 0;
+      padding: 0;
+    }
+
+    .gallery-grid a {
+      display: block;
+      width: 100%;
+      text-align: left;
+    }
+
+    .gallery-grid img {
+      width: 100%;
+      max-width: 100%; /* Fills the entire phone width cleanly */
+      height: auto;
+      display: block;
+      margin: 0;
+      border-radius: 12px; /* YouTube-style rounded media corners */
+    }
+
+    /* Responsive 16:9 Video Container */
+    .video-container {
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      margin: 2.0rem 0;
+    }
+
+    .video-container iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      border-radius: 12px;
+    }
+
+    /* 4. DESKTOP / LAPTOP BREAKPOINT (Triggers on your 1920x1080 laptop, ignored by your phone) */
+    @media (min-width: 768px) {
+      body {
+        padding: 3.2rem;
+        font-size: 1.7rem; /* 17px on desktop */
+      }
+
+      h1 {
+        font-size: 3.2rem; /* 32px on desktop */
+      }
+
+      h2 {
+        font-size: 2.4rem; /* 24px on desktop */
+      }
+
+      .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 2.4rem;
+      }
+
+      .gallery-grid img {
+        max-width: 700px;
+      }
+    }
+  </style>
 
 
 
