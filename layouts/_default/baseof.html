@@ -6,54 +6,54 @@
   <title>{{ .Title }}</title>
 
   <style>
-    /* 1. Modern Box-Sizing & Predictable Root Scale */
-    html {
-      font-size: 100%; /* 16px base browser default for accessibility */
-      -webkit-text-size-adjust: 100%;
+    /* 1. Base Reset & Full Viewport Lock */
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
       box-sizing: border-box;
+      font-family: system-ui, -apple-system, sans-serif;
+      background-color: #0f0f0f;
+      color: #f0f0f0;
+      overflow-x: hidden;
     }
 
     *, *::before, *::after {
       box-sizing: inherit;
     }
 
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      font-size: 1.6rem; 
-      line-height: 1.6;
-      color: #1a1a1a;
-      background-color: #ffffff;
-      margin: 0;
-      padding: 0;
+    /* 2. Intelligent Layout Container using Dynamic Viewport Units (dvh) */
+    .viewport-fit-container {
+      width: 100%;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
-    }
-
-    /* Main content wrapper to handle wide desktops gracefully */
-    .site-container {
-      width: 100%;
-      max-width: 1320px;
+      justify-content: center;
+      align-items: center;
+      padding: 2rem;
       margin: 0 auto;
-      padding: 2rem 1.6rem;
-      flex: 1;
+      max-width: 1600px;
     }
 
+    /* Content wrapper that respects media aspect-ratio constraints */
+    .media-stage {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    /* Typography */
     h1 {
-      font-size: 2.4rem;
+      font-size: clamp(2rem, 4vw, 3.2rem);
       line-height: 1.2;
-      margin: 0 0 1.6rem 0;
-      letter-spacing: -0.02em;
+      margin: 0 0 1rem 0;
     }
 
-    h2 {
-      font-size: 2.0rem;
-      line-height: 1.3;
-      margin: 2.8rem 0 1.2rem 0;
-    }
-
-    /* 2. ROBUST RESPONSIVE VIDEO EMBEDS 
-       Using an outer wrapper guarantees the iframe doesn't collapse vertically in Safari/iOS */
+    /* 3. RESPONSIVE VIDEO EMBED (Maintains 16:9 without cropping) */
     .video-container,
     iframe[src*="player.vimeo.com"] {
       position: relative;
@@ -63,70 +63,66 @@
       border: 0;
       border-radius: 12px;
       overflow: hidden;
-      margin: 2.4rem 0;
-      background: #000; /* Fallback background while video loads */
+      background: #000;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
 
-    /* Target raw iframe specifically if it's pasted directly */
     iframe[src*="player.vimeo.com"] {
       display: block;
     }
 
-    /* 3. GALLERY GRID: 1 column on phone, 2 columns on desktop */
-    .gallery-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 2.4rem;
-      width: 100%;
-      margin: 2.4rem 0;
+    /* 4. ORIENTATION & DIMENSION INTELLIGENCE */
+
+    /* PORTRAIT MODE (Tall screens like phones upright)
+       Prioritize fitting to the available screen WIDTH, letting height flow naturally. */
+    @media (orientation: portrait) {
+      .viewport-fit-container {
+        justify-content: flex-start; /* Align to top so scrolling is natural if video + text is tall */
+        padding: 1.6rem 1rem;
+      }
+      
+      .media-stage {
+        max-width: 100%;
+      }
     }
 
-    .gallery-grid a {
-      display: block;
-      width: 100%;
-      text-align: left;
-      text-decoration: none;
-    }
-
-    .gallery-grid img {
-      width: 100%;
-      height: auto;
-      display: block;
-      border-radius: 12px;
-      object-fit: cover;
-    }
-
-    /* 4. DESKTOP / LAPTOP BREAKPOINT */
-    @media (min-width: 768px) {
-      .site-container {
-        padding: 4rem 3.2rem;
+    /* LANDSCAPE MODE (Wide screens like laptops, desktops, or phones turned sideways)
+       Prioritize fitting to the available screen HEIGHT to prevent vertical clipping/scrolling */
+    @media (orientation: landscape) and (min-width: 768px) {
+      .viewport-fit-container {
+        height: 100dvh;
+        max-height: 100dvh;
+        overflow-y: auto; /* Fallback if content exceeds height */
+        padding: 2.4rem;
       }
 
-      h1 {
-        font-size: 3.6rem;
+      .media-stage {
+        /* Restrict max-height based on 16:9 ratio math so it scales to fill available height */
+        max-height: calc(100dvh - 8rem);
+        justify-content: center;
       }
 
-      h2 {
-        font-size: 2.6rem;
-      }
-
-      .gallery-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 3.2rem;
+      /* When landscape space is tight vertically, clamp video height to fill available screen height */
+      .video-container,
+      iframe[src*="player.vimeo.com"] {
+        max-height: calc(100dvh - 14rem);
+        width: auto;
+        aspect-ratio: 16 / 9;
+        margin: 0 auto;
       }
     }
   </style>
 </head>
-
 <body>
-
     {{ partial "header.html" . }}
 
-    <main>
-        {{ block "main" . }}{{ end }}
+  <div class="viewport-fit-container">
+    <main class="media-stage">
+      {{ block "main" . }}{{ end }}
     </main>
-
+  </div>
     {{ partial "footer.html" . }}
 
 </body>
+
 </html>
