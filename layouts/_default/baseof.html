@@ -6,123 +6,54 @@
   <title>{{ .Title }}</title>
 
   <style>
-    /* 1. Base Reset & Full Viewport Lock */
+    /* 1. Reset: Lock the page to the exact viewport bounds, zero scroll */
     html, body {
       margin: 0;
       padding: 0;
       width: 100%;
       height: 100%;
-      box-sizing: border-box;
-      font-family: system-ui, -apple-system, sans-serif;
-      background-color: #0f0f0f;
-      color: #f0f0f0;
-      overflow-x: hidden;
-    }
-
-    *, *::before, *::after {
-      box-sizing: inherit;
-    }
-
-    /* 2. Intelligent Layout Container using Dynamic Viewport Units (dvh) */
-    .viewport-fit-container {
-      width: 100%;
-      min-height: 100dvh;
+      background-color: #000; /* Letterbox / pillarbox background */
+      overflow: hidden;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
-      padding: 2rem;
-      margin: 0 auto;
-      max-width: 1600px;
     }
 
-    /* Content wrapper that respects media aspect-ratio constraints */
-    .media-stage {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 2rem;
-    }
-
-    /* Typography */
-    h1 {
-      font-size: clamp(2rem, 4vw, 3.2rem);
-      line-height: 1.2;
-      margin: 0 0 1rem 0;
-    }
-
-    /* 3. RESPONSIVE VIDEO EMBED (Maintains 16:9 without cropping) */
-    .video-container,
-    iframe[src*="player.vimeo.com"] {
+    /* 2. The Scaling Container 
+       This strictly enforces our 16:9 bounds relative to the viewport dimensions */
+    .video-viewport-scaler {
       position: relative;
-      width: 100%;
+      /* The magic CSS math: automatically chooses width/height based on viewport orientation */
+      width: min(100vw, 100vh * (16 / 9));
+      height: min(100vh, 100vw / (16 / 9));
       aspect-ratio: 16 / 9;
-      height: auto;
+    }
+
+    /* 3. The Video / Iframe fills the scaler container perfectly */
+    .video-viewport-scaler iframe,
+    .video-viewport-scaler video,
+    .video-viewport-scaler .video-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       border: 0;
-      border-radius: 12px;
-      overflow: hidden;
-      background: #000;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-
-    iframe[src*="player.vimeo.com"] {
-      display: block;
-    }
-
-    /* 4. ORIENTATION & DIMENSION INTELLIGENCE */
-
-    /* PORTRAIT MODE (Tall screens like phones upright)
-       Prioritize fitting to the available screen WIDTH, letting height flow naturally. */
-    @media (orientation: portrait) {
-      .viewport-fit-container {
-        justify-content: flex-start; /* Align to top so scrolling is natural if video + text is tall */
-        padding: 1.6rem 1rem;
-      }
-      
-      .media-stage {
-        max-width: 100%;
-      }
-    }
-
-    /* LANDSCAPE MODE (Wide screens like laptops, desktops, or phones turned sideways)
-       Prioritize fitting to the available screen HEIGHT to prevent vertical clipping/scrolling */
-    @media (orientation: landscape) and (min-width: 768px) {
-      .viewport-fit-container {
-        height: 100dvh;
-        max-height: 100dvh;
-        overflow-y: auto; /* Fallback if content exceeds height */
-        padding: 2.4rem;
-      }
-
-      .media-stage {
-        /* Restrict max-height based on 16:9 ratio math so it scales to fill available height */
-        max-height: calc(100dvh - 8rem);
-        justify-content: center;
-      }
-
-      /* When landscape space is tight vertically, clamp video height to fill available screen height */
-      .video-container,
-      iframe[src*="player.vimeo.com"] {
-        max-height: calc(100dvh - 14rem);
-        width: auto;
-        aspect-ratio: 16 / 9;
-        margin: 0 auto;
-      }
+      margin: 0;
     }
   </style>
 </head>
 <body>
     {{ partial "header.html" . }}
 
-  <div class="viewport-fit-container">
-    <main class="media-stage">
-      {{ block "main" . }}{{ end }}
-    </main>
+  <!-- Hugo injects the video content here, perfectly scaled to the viewport -->
+  <div class="video-viewport-scaler">
+    {{ block "main" . }}{{ end }}
   </div>
+
     {{ partial "footer.html" . }}
 
-</body>
 
+</body>
 </html>
+
