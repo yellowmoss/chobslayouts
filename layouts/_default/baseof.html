@@ -11,48 +11,48 @@
     <!-- Gallery CSS: 2-column, left-aligned, capped at 700px -->
 
 
+
+
 <style>
-  /* Base fluid typography setup */
+  /* Base fluid typography setup - bumped up for better mobile readability */
   :root {
-    /* Scales smoothly: minimum 1rem on mobile, growing with viewport width, capping at 1.125rem on desktop */
-    font-size: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+    font-size: clamp(1.125rem, 1rem + 0.75vw, 1.25rem);
   }
 
   body {
     font-family: system-ui, -apple-system, sans-serif;
     line-height: 1.6;
     color: #222;
-    padding: clamp(0.75rem, 2vw, 2rem); /* Fluid padding based on screen size */
+    padding: clamp(1rem, 3vw, 2rem); 
     max-width: 1400px;
     margin: 0 auto;
   }
 
-  /* Fluid headings that scale proportionally between mobile and desktop */
+  /* Fluid headings */
   h1 {
-    font-size: clamp(1.75rem, 1.5rem + 1.5vw, 2.5rem);
+    font-size: clamp(2rem, 1.75rem + 2vw, 2.8rem);
   }
 
   h2 {
-    font-size: clamp(1.35rem, 1.2rem + 1vw, 2rem);
+    font-size: clamp(1.5rem, 1.35rem + 1.2vw, 2.2rem);
   }
 
   /* --- Responsive Gallery Grid --- */
   .gallery-grid {
     display: grid !important;
-    /* Mobile-first: single column by default */
-    grid-template-columns: 1fr !important; 
-    gap: 12px !important;
+    grid-template-columns: 1fr !important; /* 1 column on mobile */
+    gap: 16px !important;
     width: 100% !important;
     max-width: 1400px !important;
     margin: 1.5rem 0 !important;
     padding: 0 !important;
   }
 
-  /* Expand to 2 columns on tablets, laptops (your 1920x1080), and wide phones */
+  /* Expand to 2 columns on tablets/desktops */
   @media (min-width: 768px) {
     .gallery-grid {
       grid-template-columns: repeat(2, 1fr) !important;
-      gap: 16px !important;
+      gap: 20px !important;
     }
   }
 
@@ -67,8 +67,8 @@
     max-width: 700px !important;
     height: auto !important;
     display: block !important;
-    margin: 0 !important;
-    border-radius: 4px !important;
+    margin: 0 auto !important;
+    border-radius: 6px !important;
   }
 
   /* --- Modern Responsive Video Container --- */
@@ -82,9 +82,10 @@
     width: 100%;
     height: 100%;
     border: 0;
-    border-radius: 4px;
+    border-radius: 6px;
   }
 </style>
+
 
 
 
