@@ -1,0 +1,76 @@
+{{ define "main" }}
+<article>
+    <h1>{{ .Title }}</h1>
+    <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "January 2, 2006" }}</time>
+    
+    <div class="content">
+
+
+    {{ $content := .RawContent }}
+
+    {{/* 1. Handle .mp4 video wikilinks */}}
+    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.mp4)\s*(?:\|[^\]]+)?\s*\]\]` `<video width="100%" controls><source src="/assets/$1" type="video/mp4">Your browser does not support the video tag.</video>` $content }}
+
+    {{/* 2. Handle .webm video wikilinks */}}
+    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.webm)\s*(?:\|[^\]]+)?\s*\]\]` `<video width="100%" controls><source src="/assets/$1" type="video/webm">Your browser does not support the video tag.</video>` $content }}
+
+    {{/* 3. Handle .mov (QuickTime) video wikilinks */}}
+    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.mov)\s*(?:\|[^\]]+)?\s*\]\]` `<video width="100%" controls><source src="/assets/$1" type="video/quicktime">Your browser does not support the video tag.</video>` $content }}
+
+    {{/* 4. Handle .ogv (Ogg) video wikilinks */}}
+    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.ogv)\s*(?:\|[^\]]+)?\s*\]\]` `<video width="100%" controls><source src="/assets/$1" type="video/ogg">Your browser does not support the video tag.</video>` $content }}
+
+    {{/* 5. Clean up any remaining non-video Obsidian image tags */}}
+    {{ $content = replaceRE `!\[\[\s*[^\]\|\n]+\.(?:png|jpg|jpeg|gif|webp)\s*(?:\|[^\]]+)?\s*\]\]` "" $content }}
+
+    {{/* 6. Render the final processed markdown */}}  
+    {{ .RenderString $content }}
+
+    </div>
+
+    {{/* Find all image references in the raw content */}}
+    {{ $imgMatches := findRE `!\[\[\s*([^\]\|]+)(?:\|[^\]]+)?\s*\]\]` .RawContent }}
+    
+    {{/* 3. ONLY show the gallery section if images actually exist */}}
+    {{ if gt (len $imgMatches) 0 }}
+    <section class="post-gallery-footer">
+        <h3>Post Gallery</h3>
+        <div class="gallery-grid">
+            {{ range $imgMatches }}
+              {{/* Extract the clean filename */}}
+              {{ $filename := replaceRE `!\[\[\s*([^\]\|]+).*` "$1" . }}
+              {{ $filename = trim $filename " " }}
+
+              {{/* Fetch from global assets */}}
+              {{ $res := resources.Get $filename }}
+              {{ if not $res }}
+                {{ $res = resources.Get (print "assets/" $filename) }}
+              {{ end }}
+
+              {{ if $res }}
+                {{/* Resize thumbnail */}}
+                {{ $thumb := "" }}
+                {{ if gt $res.Width 700 }}
+                  {{ $thumb = $res.Resize "700x webp q85" }}
+                {{ else }}
+                  {{ $thumb = $res.Process "webp q85" }}
+                {{ end }}
+
+                {{/* Resize large version for lightbox */}}
+                {{ $large := "" }}
+                {{ if gt $res.Width 1600 }}
+                  {{ $large = $res.Resize "1600x webp q90" }}
+                {{ else }}
+                  {{ $large = $res.Process "webp q90" }}
+                {{ end }}
+
+                <a href="{{ $large.RelPermalink }}" class="glightbox" data-gallery="gallery-{{ $.File.UniqueID }}">
+                  <img src="{{ $thumb.RelPermalink }}" alt="{{ $filename }}" loading="lazy" />
+                </a>
+              {{ end }}
+            {{ end }}
+        </div>
+    </section>
+    {{ end }}
+</article>
+{{ end }}

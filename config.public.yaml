@@ -1,0 +1,11 @@
+baseURL: "https://blog.ondulo.uk/"
+languageCode: "en-us"
+title: "My Minimal Hugo Site"
+
+taxonomies:
+  tag: "tags"
+
+# Optional cascade rule for targeting public content
+cascade:
+  - target:
+      path: "**"

@@ -1,0 +1,39 @@
+{{ $dest := .Destination }}
+{{ $res := .Page.Resources.Get $dest }}
+
+{{ if not $res }}
+  {{ $res = resources.Get (print "/assets/" $dest) }}
+{{ end }}
+{{ if not $res }}
+  {{ $res = resources.Get $dest }}
+{{ end }}
+
+{{ if $res }}
+  {{/* 1. Handle Thumbnail (never upscale if smaller than 1000px) */}}
+  {{ $thumb := "" }}
+  {{ if gt $res.Width 1000 }}
+    {{ $thumb = $res.Resize "320x webp q85" }}
+  {{ else }}
+    {{/* If smaller, convert to webp/optimize without forcing a size increase */}}
+    {{ $thumb = $res.Process "webp q85" }}
+  {{ end }}
+
+  {{/* 2. Handle Lightbox Large Image (never upscale if smaller than 1600px) */}}
+  {{ $large := "" }}
+  {{ if gt $res.Width 1600 }}
+    {{ $large = $res.Resize "1600x webp q90" }}
+  {{ else }}
+    {{ $large = $res.Process "webp q90" }}
+  {{ end }}
+
+  <figure class="post-image-item">
+    <a href="{{ $large.RelPermalink }}" class="glightbox" data-gallery="gallery-{{ .Page.File.UniqueID }}">
+      <img src="{{ $thumb.RelPermalink }}" alt="{{ .Text }}" loading="lazy" />
+    </a>
+    {{ if .Text }}
+      <figcaption>{{ .Text }}</figcaption>
+    {{ end }}
+  </figure>
+{{ else }}
+  <img src="{{ $dest }}" alt="{{ .Text }}" loading="lazy" />
+{{ end }}
