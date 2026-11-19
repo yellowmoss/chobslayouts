@@ -1,3 +1,54 @@
+
+/* Base fluid typography setup */
+:root {
+    /* Scales smoothly: minimum 1rem on mobile, growing with viewport width, capping at 1.125rem on desktop */
+    font-size: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+}
+
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    color: #222;
+    padding: 1rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Fluid headings that scale proportionally between mobile and desktop */
+h1 {
+    font-size: clamp(1.75rem, 1.5rem + 1.5vw, 2.5rem);
+}
+
+h2 {
+    font-size: clamp(1.35rem, 1.2rem + 1vw, 2rem);
+}
+
+/* Gallery Grid & Image Styles (kept from earlier) */
+.gallery-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 1400px !important;
+    margin: 1.5rem 0 !important;
+    padding: 0 !important;
+}
+
+.gallery-grid a {
+    display: block !important;
+    width: 100% !important;
+    text-align: left !important;
+}
+
+.gallery-grid img {
+    width: 100% !important;
+    max-width: 700px !important;
+    height: auto !important;
+    display: block !important;
+    margin: 0 !important;
+    border-radius: 4px !important;
+}
+
 .vimeo-vertical-wrap {
   /* Replace with the video's actual pixel dimensions (example: 1080x1920) */
   --nat-w: 1080px;
