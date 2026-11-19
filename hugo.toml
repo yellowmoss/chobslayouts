@@ -1,0 +1,8 @@
+baseURL = "https://blog.ondulo.uk/"
+languageCode = "en-us"
+title = "My Hugo Blog"
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
