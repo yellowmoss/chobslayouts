@@ -2,57 +2,60 @@
   box-sizing: border-box;
 }
 
-html, body {
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
   margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
   background-color: #000;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  color: #f5f5f5;
   font-family: system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+  overflow-y: auto; /* normal vertical scrolling */
 }
 
-.viewport-stage {
+.page-container {
   width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 4rem;
 }
 
-/* Landscape video container (16:9) */
-.video-wrapper.landscape {
-  position: relative;
-  width: min(100vw, 100vh * (16 / 9));
-  width: min(100dvw, 100dvh * (16 / 9));
-  height: min(100vh, 100vw / (16 / 9));
-  height: min(100dvh, 100dvw / (16 / 9));
+/* Base video stage: fits inside available viewport height without cropping */
+.video-stage {
+  margin: 1.5rem auto;
+  max-width: 100%;
+}
+
+.video-stage.landscape {
   aspect-ratio: 16 / 9;
+  /* Never taller than 80% of dynamic viewport height, and never wider than its 16:9 height allows */
+  width: min(100%, 80dvh * (16 / 9));
+  max-height: 80dvh;
 }
 
-/* Portrait video container (9:16) */
-.video-wrapper.portrait {
-  position: relative;
-  width: min(100vw, 100vh * (9 / 16));
-  width: min(100dvw, 100dvh * (9 / 16));
-  height: min(100vh, 100vw / (9 / 16));
-  height: min(100dvh, 100dvw / (9 / 16));
+.video-stage.portrait {
   aspect-ratio: 9 / 16;
+  /* Great for 2500px-tall phones: caps height at 80dvh and derives width from 9:16 */
+  height: min(80dvh, 100vw * (16 / 9));
+  width: auto;
+  max-width: 100%;
 }
 
-.video-wrapper iframe,
-.video-wrapper video,
-.video-wrapper .video-container {
-  position: absolute;
-  top: 0;
-  left: 0;
+.video-stage .video-container,
+.video-stage iframe,
+.video-stage video {
+  display: block;
   width: 100%;
   height: 100%;
   border: 0;
-  margin: 0;
   border-radius: 12px;
+}
+
+/* If using a native <video> element, ensure no cropping */
+.video-stage video {
+  object-fit: contain;
 }
