@@ -46,15 +46,30 @@ footer,
     padding-inline: 0;
 }
 
-/* Keep media & general content containers free of left-padding shifts */
+
+.text-flow :is(video, img, .video-bleed, .vimeo-stage, .gallery-grid) {
+    padding-inline: 0;
+}
+
+
+
+
+/* Guarantee zero horizontal padding on media elements and containers */
 main,
 article,
 section,
 .content,
+.video-bleed,
 .vimeo-stage,
-.gallery-grid {
+.gallery-grid,
+video,
+img {
     padding-inline: 0;
 }
+
+
+
+
 
 /* Header & Section Navigation */
 .site-header {

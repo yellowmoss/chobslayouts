@@ -35,30 +35,39 @@
     {{/* 5. Clean up any remaining non-video Obsidian image tags */}}
     {{ $content = replaceRE `!\[\[\s*[^\]\|\n]+\.(?:png|jpg|jpeg|gif|webp)\s*(?:\|[^\]]+)?\s*\]\]` "" $content }}
 
+
+
     {{/* 6. Render processed markdown cleanly */}}
     {{ $rendered := .RenderString $content }}
-    {{ $parts := split $rendered `<div class="video-bleed">` }}
-    {{ if gt (len $parts) 1 }}
-      {{ range $i, $part := $parts }}
+    {{ if in $rendered `<div class="video-bleed">` }}
+      {{ $chunks := split $rendered `<div class="video-bleed">` }}
+      {{ range $i, $chunk := $chunks }}
         {{ if eq $i 0 }}
-          {{ if ne (trim (plainify $part) " \n\r\t") "" }}
-            <div class="text-flow">{{ $part | safeHTML }}</div>
+          {{ if ne (trim (plainify $chunk) " \n\r\t") "" }}
+            <div class="text-flow">{{ $chunk | safeHTML }}</div>
           {{ end }}
         {{ else }}
-          {{ $endSplit := split $part "</div>" }}
-          <div class="video-bleed">{{ index $endSplit 0 | safeHTML }}</div>
-          {{ if gt (len $endSplit) 1 }}
-            {{ $after := delimit (after 1 $endSplit) "</div>" }}
-            {{ if ne (trim (plainify $after) " \n\r\t") "" }}
-              <div class="text-flow">{{ $after | safeHTML }}</div>
+          {{/* Split at the end of the video-bleed wrapper */}}
+          {{ $parts := split $chunk "</div></div>" }}
+          {{ if gt (len $parts) 1 }}
+            <div class="video-bleed">{{ index $parts 0 | safeHTML }}</div></div>
+            {{ $rest := delimit (after 1 $parts) "</div></div>" }}
+            {{ if ne (trim (plainify $rest) " \n\r\t") "" }}
+              <div class="text-flow">{{ $rest | safeHTML }}</div>
             {{ end }}
+          {{ else }}
+            <div class="video-bleed">{{ $chunk | safeHTML }}</div>
           {{ end }}
         {{ end }}
       {{ end }}
     {{ else }}
       <div class="text-flow">{{ $rendered }}</div>
     {{ end }}
-    </div>
+
+
+
+
+
 
     <script>
     (() => {
