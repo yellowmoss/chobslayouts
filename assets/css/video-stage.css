@@ -1,3 +1,40 @@
+/* Base fluid typography & spacing setup */
+:root {
+    --page-pad-x: clamp(0.5rem, 2vw, 1.25rem);
+    /* Scales smoothly: minimum 1rem on mobile, growing with viewport width, capping at 1.125rem on desktop */
+    font-size: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    line-height: 1.6;
+    color: #222;
+    padding: 0.5rem var(--page-pad-x);
+    max-width: 1400px;
+    margin: 0 auto;
+    overflow-x: clip;
+}
+
+/* Fluid headings that scale proportionally between mobile and desktop */
+h1 {
+    font-size: clamp(1.75rem, 1.5rem + 1.5vw, 2.5rem);
+    line-height: 1.2;
+}
+
+h2 {
+    font-size: clamp(1.35rem, 1.2rem + 1vw, 2rem);
+    line-height: 1.25;
+}
+
+
+
+
 /* Header & Section Navigation */
 header {
     display: flex;
@@ -59,6 +96,64 @@ header ul {
         margin-left: 0;
         gap: 0.25rem 0.75rem;
     }
+}
+
+
+
+
+
+
+/* Gallery Grid & Image Styles */
+.gallery-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 1400px !important;
+    margin: 1.5rem 0 !important;
+    padding: 0 !important;
+}
+
+.gallery-grid a {
+    display: block !important;
+    width: 100% !important;
+    text-align: left !important;
+}
+
+.gallery-grid img {
+    width: 100% !important;
+    max-width: 700px !important;
+    height: auto !important;
+    display: block !important;
+    margin: 0 !important;
+    border-radius: 4px !important;
+}
+
+/* Adaptive Vimeo Stage (uncropped scaling within container & viewport) */
+.vimeo-stage {
+    --nat-w: 1920;
+    --nat-h: 1080;
+    --ratio: calc(var(--nat-w) / var(--nat-h));
+    --max-h: calc(100dvh - 1rem);
+
+    position: relative;
+    width: 100%;
+    max-width: min(
+        100%,
+        calc(var(--nat-w) * 1px),
+        calc(var(--max-h) * var(--ratio))
+    );
+    max-height: var(--max-h);
+    aspect-ratio: var(--ratio);
+    margin: 0.5rem auto;
+}
+
+.vimeo-stage iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
 }
 
 
