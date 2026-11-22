@@ -14,7 +14,7 @@
       {{ with or ($page.Resources.Get $file) (resources.Get $file) (resources.Get (print "assets/" $file)) }}
         {{ $src = .RelPermalink }}
       {{ end }}
-      {{ $html := printf `<div class="mp3-box" data-src="%s"><img alt="%s" style="display:none;max-width:240px;border-radius:8px"><audio src="%s" preload="metadata"></audio><button type="button" class="play">Play</button><button type="button" class="pause" disabled>Pause</button><input type="range" class="seek" value="0" min="0" max="100" step="0.1"><span class="time">0:00 / 0:00</span></div>` ($src | safeURL) ($file | htmlEscape) ($src | safeURL) }}
+      {{ $html := printf `<div class="mp3-box" data-src="%s"><img alt="%s" style="display:none;max-width:600px;width:100%;height:auto;border-radius:8px"><audio src="%s" preload="metadata"></audio><button type="button" class="play">Play</button><button type="button" class="pause" disabled>Pause</button><input type="range" class="seek" value="0" min="0" max="100" step="0.1"><span class="time">0:00 / 0:00</span></div>` ($src | safeURL) ($file | htmlEscape) ($src | safeURL) }}
       {{ $content = replace $content $match $html }}
     {{ end }}
 
@@ -38,7 +38,7 @@
     </div>
 
     <script type="module">
-    import * as id3 from "https://unpkg.com/id3js@^2/lib/id3.js";
+    import * as id3 from "https://esm.sh/id3js@2";
     const fmt = (s) => isFinite(s) ? `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}` : "0:00";
     for (const box of document.querySelectorAll(".mp3-box")) {
     const audio = box.querySelector("audio"), img = box.querySelector("img");
@@ -50,13 +50,17 @@
     play.disabled = !audio.paused && !audio.ended;
     pause.disabled = !play.disabled;
     };
-    audio.onloadedmetadata = () => { seek.max = audio.duration || 100; time.textContent = `0:00 / ${fmt(audio.duration)}`; };
-    audio.ontimeupdate = () => { seek.value = audio.currentTime; time.textContent = `${fmt(audio.currentTime)} / ${fmt(audio.duration)}`; };
+    const syncTime = () => {
+    if (isFinite(audio.duration) && audio.duration > 0) seek.max = audio.duration;
+    seek.value = audio.currentTime;
+    time.textContent = `${fmt(audio.currentTime)} / ${fmt(audio.duration)}`;
+    };
+    audio.onloadedmetadata = audio.ondurationchange = audio.ontimeupdate = syncTime;
     seek.oninput = () => { audio.currentTime = seek.value; };
     id3.fromUrl(box.dataset.src).then((t) => {
     const p = t?.images?.[0];
     if (p?.data) { img.src = URL.createObjectURL(new Blob([p.data], { type: p.mime || "image/jpeg" })); img.style.display = "block"; }
-    }).catch(() => {});
+    }).catch((err) => console.warn("ID3 cover load failed:", err));
     }
     </script>
 
