@@ -1,24 +1,26 @@
 {{- define "main" -}}
-  <h1>{{ .Title }}</h1>
+  <div class="text-flow">
+    <h1>{{ .Title }}</h1>
 
-  {{- with .Content -}}
-    <div class="section-intro">
-      {{ . }}
-    </div>
-  {{- end -}}
+    {{- with .Content -}}
+      <div class="section-intro">
+        {{ . }}
+      </div>
+    {{- end -}}
 
-  {{- $pages := .Pages.ByDate.Reverse -}}
-  {{- if $pages -}}
-    {{- $paginator := .Paginate $pages 10 -}}
-    <ul>
-      {{- range $paginator.Pages -}}
-        <li>
-          <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
-        </li>
-      {{- end -}}
-    </ul>
+    {{- $pages := .Pages.ByDate.Reverse -}}
+    {{- if $pages -}}
+      {{- $paginator := .Paginate $pages 10 -}}
+      <ul>
+        {{- range $paginator.Pages -}}
+          <li>
+            <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+          </li>
+        {{- end -}}
+      </ul>
 
-    {{- partial "pagination.html" $ -}}
-  {{- end -}}
+      {{- partial "pagination.html" $ -}}
+    {{- end -}}
+  </div>
 {{- end -}}
 
