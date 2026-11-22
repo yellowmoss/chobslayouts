@@ -8,11 +8,10 @@
   {{- end -}}
 
   {{- $pages := .RegularPages.ByDate.Reverse -}}
-  {{- $paginator := .Paginate $pages 10 -}}
-
-  {{- with $paginator.Pages -}}
+  {{- if $pages -}}
+    {{- $paginator := .Paginate $pages 10 -}}
     <ul>
-      {{- range . -}}
+      {{- range $paginator.Pages -}}
         <li>
           <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
         </li>
@@ -20,7 +19,6 @@
     </ul>
 
     {{- partial "pagination.html" $ -}}
-  {{- else -}}
-    <p>No posts found in this section yet.</p>
   {{- end -}}
 {{- end -}}
+
