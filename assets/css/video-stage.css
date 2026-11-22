@@ -33,25 +33,42 @@ h2 {
     line-height: 1.25;
 }
 
-/* Text breathing room across header, main content, and footer */
+
+
+/* Text breathing room across header, main content, taxonomy, and footer */
 .site-header,
 footer,
-main > p,
-main > h1,
-main > h2,
-main > h3,
-main > ul,
-main > ol,
-main > blockquote,
-article > p,
-article > h1,
-article > h2,
-article > h3,
-article > ul,
-article > ol,
-article > blockquote {
+:is(main, article, section) :is(
+    p:not(:has(.vimeo-stage, .gallery-grid)),
+    h1,
+    h2,
+    h3,
+    h4,
+    ul,
+    ol,
+    blockquote,
+    figcaption,
+    time,
+    small,
+    .date,
+    .post-date,
+    .post-meta,
+    .read-more,
+    .tags,
+    [class*="tag"],
+    a[href*="/tags/"]
+) {
     padding-inline: var(--text-pad-x);
 }
+
+/* Prevent double horizontal padding when a text element sits inside another padded text element */
+:is(p, h1, h2, h3, h4, ul, ol, blockquote, figcaption, .post-meta, .tags, [class*="tag"])
+    :is(p, h1, h2, h3, h4, ul, ol, blockquote, figcaption, time, small, a) {
+    padding-inline: 0;
+}
+
+
+
 
 /* Header & Section Navigation */
 .site-header {
