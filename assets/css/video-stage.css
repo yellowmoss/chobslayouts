@@ -33,40 +33,18 @@ h2 {
     line-height: 1.25;
 }
 
-/* Keep layout containers free of left-padding shifts on media */
-main,
-article,
-section {
-    padding-inline: 0;
-}
-
-/* Header & Footer text breathing room */
-.site-header,
-footer {
-    padding-inline: var(--text-pad-x);
-}
-
-/* Pad text elements without shifting .vimeo-stage or .gallery-grid */
-:is(main, article, section) :is(
-    p:not(:has(.vimeo-stage, .gallery-grid, img)),
-    h1,
-    h2,
-    h3,
-    h4,
-    ul,
-    ol,
-    blockquote,
-    figcaption,
-    time,
-    small,
-    a
+/* Pad non-media content blocks cleanly without shifting videos or galleries */
+:is(.site-header, footer, main, article, section, div):not(
+    .vimeo-stage,
+    .gallery-grid,
+    :has(.vimeo-stage, .gallery-grid, img, iframe)
 ) {
     padding-inline: var(--text-pad-x);
 }
 
-/* Avoid double horizontal padding when text sits inside a padded text block */
-:is(p, h1, h2, h3, h4, ul, ol, blockquote, figcaption)
-    :is(time, small, a, span) {
+/* Prevent stacked horizontal padding on nested content blocks */
+:is(.site-header, footer, main, article, section, div)
+    :is(main, article, section, div):not(:has(.vimeo-stage, .gallery-grid, img, iframe)) {
     padding-inline: 0;
 }
 
@@ -170,7 +148,6 @@ footer {
     display: block !important;
     width: 100% !important;
     text-align: left !important;
-    padding-inline: 0 !important;
 }
 
 .gallery-grid img {
@@ -208,5 +185,6 @@ footer {
     height: 100%;
     border: 0;
 }
+
 
 
