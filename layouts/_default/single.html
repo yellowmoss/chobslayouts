@@ -2,11 +2,170 @@
 <article>
     <h1>{{ .Title }}</h1>
     <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "January 2, 2006" }}</time>
-    
+
     <div class="content">
 
-
     {{ $content := .RawContent }}
+    {{ $page := . }}
+
+    {{/* 0. Handle .mp3 audio wikilinks with ID3 cover extraction + Play/Pause controls */}}
+    {{ $mp3Matches := findRE `!\[\[\s*[^\]\|\n]+\.mp3\s*(?:\|[^\]]+)?\s*\]\]` $content }}
+    {{ range $idx, $match := $mp3Matches }}
+      {{ $rawName := replaceRE `^!\[\[\s*([^\]\|]+).*` "$1" $match }}
+      {{ $filename := trim $rawName " " }}
+      {{ $altText := $filename }}
+      {{ if findRE `\|[^\]]+` $match }}
+        {{ $altText = trim (replaceRE `^!\[\[\s*[^\]\|]+\|\s*([^\]]+)\s*\]\]` "$1" $match) " " }}
+      {{ end }}
+
+      {{ $src := printf "/assets/%s" $filename }}
+      {{ with $page.Resources.Get $filename }}
+        {{ $src = .RelPermalink }}
+      {{ else }}
+        {{ with resources.Get $filename }}
+          {{ $src = .RelPermalink }}
+        {{ else }}
+          {{ with resources.Get (print "assets/" $filename) }}
+            {{ $src = .RelPermalink }}
+          {{ end }}
+        {{ end }}
+      {{ end }}
+
+      {{ $uid := printf "mp3-%s-%d" (md5 (printf "%s-%s" $page.RelPermalink $filename)) $idx }}
+      {{ $playerHTML := printf `
+<figure class="mp3-card" id="%s" data-audio-src="%s">
+  <img class="mp3-cover" alt="%s" style="display:none; max-width:240px; border-radius:8px;" />
+  <audio class="mp3-player" src="%s" preload="metadata"></audio>
+  <div class="mp3-controls" style="margin-top:0.5rem; display:flex; gap:0.5rem;">
+    <button type="button" class="mp3-play">Play</button>
+    <button type="button" class="mp3-pause" disabled>Pause</button>
+  </div>
+</figure>
+<script>
+(() => {
+  const root = document.getElementById(%q);
+  if (!root || root.dataset.initialized) return;
+  root.dataset.initialized = "true";
+
+  const audio = root.querySelector(".mp3-player");
+  const img = root.querySelector(".mp3-cover");
+  const playBtn = root.querySelector(".mp3-play");
+  const pauseBtn = root.querySelector(".mp3-pause");
+
+  playBtn.addEventListener("click", () => {
+    audio.play().catch((err) => console.error("Audio play failed:", err));
+  });
+
+  pauseBtn.addEventListener("click", () => {
+    audio.pause();
+  });
+
+  const syncButtons = () => {
+    const playing = !audio.paused && !audio.ended;
+    playBtn.disabled = playing;
+    pauseBtn.disabled = !playing;
+  };
+
+  audio.addEventListener("play", syncButtons);
+  audio.addEventListener("pause", syncButtons);
+  audio.addEventListener("ended", syncButtons);
+
+  function decodeSynchsafe(b0, b1, b2, b3) {
+    return ((b0 & 0x7f) << 21) | ((b1 & 0x7f) << 14) | ((b2 & 0x7f) << 7) | (b3 & 0x7f);
+  }
+
+  function readUInt32BE(bytes, offset) {
+    return (
+      ((bytes[offset] << 24) >>> 0) |
+      (bytes[offset + 1] << 16) |
+      (bytes[offset + 2] << 8) |
+      bytes[offset + 3]
+    );
+  }
+
+  function extractID3Cover(arrayBuffer) {
+    const bytes = new Uint8Array(arrayBuffer);
+    if (bytes.length < 10 || bytes[0] !== 0x49 || bytes[1] !== 0x44 || bytes[2] !== 0x33) {
+      return null;
+    }
+
+    const majorVersion = bytes[3];
+    const tagSize = decodeSynchsafe(bytes[6], bytes[7], bytes[8], bytes[9]);
+    const end = Math.min(bytes.length, 10 + tagSize);
+    let pos = 10;
+
+    if ((bytes[5] & 0x40) !== 0 && pos + 4 <= end) {
+      const extSize = majorVersion === 4
+        ? decodeSynchsafe(bytes[pos], bytes[pos + 1], bytes[pos + 2], bytes[pos + 3])
+        : readUInt32BE(bytes, pos);
+      pos += majorVersion === 4 ? extSize : extSize + 4;
+    }
+
+    while (pos + 10 <= end) {
+      const frameId = String.fromCharCode(bytes[pos], bytes[pos + 1], bytes[pos + 2], bytes[pos + 3]);
+      if (frameId === "\0\0\0\0") break;
+
+      const frameSize = majorVersion === 4
+        ? decodeSynchsafe(bytes[pos + 4], bytes[pos + 5], bytes[pos + 6], bytes[pos + 7])
+        : readUInt32BE(bytes, pos + 4);
+
+      const dataStart = pos + 10;
+      const dataEnd = dataStart + frameSize;
+      if (frameSize <= 0 || dataEnd > end) break;
+
+      if (frameId === "APIC") {
+        let i = dataStart;
+        const textEncoding = bytes[i];
+        i += 1;
+
+        const mimeStart = i;
+        while (i < dataEnd && bytes[i] !== 0x00) i += 1;
+        let mimeType = new TextDecoder("latin1").decode(bytes.subarray(mimeStart, i));
+        if (!mimeType) mimeType = "image/jpeg";
+        i += 1;
+
+        if (i >= dataEnd) break;
+        i += 1; // skip picture type byte
+
+        if (textEncoding === 1 || textEncoding === 2) {
+          while (i + 1 < dataEnd && !(bytes[i] === 0x00 && bytes[i + 1] === 0x00)) {
+            i += 2;
+          }
+          i += 2;
+        } else {
+          while (i < dataEnd && bytes[i] !== 0x00) {
+            i += 1;
+          }
+          i += 1;
+        }
+
+        if (i < dataEnd) {
+          return new Blob([bytes.subarray(i, dataEnd)], { type: mimeType });
+        }
+      }
+
+      pos = dataEnd;
+    }
+
+    return null;
+  }
+
+  fetch(audio.currentSrc || audio.src)
+    .then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error(res.status))))
+    .then((buf) => {
+      const blob = extractID3Cover(buf);
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        img.src = url;
+        img.style.display = "block";
+      }
+    })
+    .catch(() => {});
+})();
+</script>` $uid ($src | safeURL) ($altText | htmlEscape) ($src | safeURL) $uid }}
+
+      {{ $content = replace $content $match $playerHTML }}
+    {{ end }}
 
     {{/* 1. Handle .mp4 video wikilinks */}}
     {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.mp4)\s*(?:\|[^\]]+)?\s*\]\]` `<video width="100%" controls><source src="/assets/$1" type="video/mp4">Your browser does not support the video tag.</video>` $content }}
@@ -23,14 +182,14 @@
     {{/* 5. Clean up any remaining non-video Obsidian image tags */}}
     {{ $content = replaceRE `!\[\[\s*[^\]\|\n]+\.(?:png|jpg|jpeg|gif|webp)\s*(?:\|[^\]]+)?\s*\]\]` "" $content }}
 
-    {{/* 6. Render the final processed markdown */}}  
+    {{/* 6. Render the final processed markdown */}}
     {{ .RenderString $content }}
 
     </div>
 
-    {{/* Find all image references in the raw content */}}
-    {{ $imgMatches := findRE `!\[\[\s*([^\]\|]+)(?:\|[^\]]+)?\s*\]\]` .RawContent }}
-    
+    {{/* Find image references in the raw content (excludes .mp3, .mp4, etc.) */}}
+    {{ $imgMatches := findRE `!\[\[\s*[^\]\|\n]+\.(?:png|jpg|jpeg|gif|webp)\s*(?:\|[^\]]+)?\s*\]\]` .RawContent }}
+
     {{/* 3. ONLY show the gallery section if images actually exist */}}
     {{ if gt (len $imgMatches) 0 }}
     <section class="post-gallery-footer">
@@ -47,7 +206,7 @@
                 {{ $res = resources.Get (print "assets/" $filename) }}
               {{ end }}
 
-              {{ if $res }}
+              {{ if and $res (reflect.IsImageResourceProcessable $res) }}
                 {{/* Resize thumbnail */}}
                 {{ $thumb := "" }}
                 {{ if gt $res.Width 700 }}
@@ -64,7 +223,8 @@
                   {{ $large = $res.Process "webp q90" }}
                 {{ end }}
 
-                <a href="{{ $large.RelPermalink }}" class="glightbox" data-gallery="gallery-{{ $.File.UniqueID }}">
+                {{ $galleryId := cond (ne $.File nil) $.File.UniqueID (md5 $.RelPermalink) }}
+                <a href="{{ $large.RelPermalink }}" class="glightbox" data-gallery="gallery-{{ $galleryId }}">
                   <img src="{{ $thumb.RelPermalink }}" alt="{{ $filename }}" loading="lazy" />
                 </a>
               {{ end }}
