@@ -1,6 +1,7 @@
 /* Base fluid typography & spacing setup */
 :root {
     --page-pad-x: clamp(0.5rem, 2vw, 1.25rem);
+    --text-pad-x: clamp(0.6rem, 2.5vw, 1.25rem);
     /* Scales smoothly: minimum 1rem on mobile, growing with viewport width, capping at 1.125rem on desktop */
     font-size: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
 }
@@ -32,8 +33,25 @@ h2 {
     line-height: 1.25;
 }
 
-
-
+/* Text breathing room across header, main content, and footer */
+.site-header,
+footer,
+main > p,
+main > h1,
+main > h2,
+main > h3,
+main > ul,
+main > ol,
+main > blockquote,
+article > p,
+article > h1,
+article > h2,
+article > h3,
+article > ul,
+article > ol,
+article > blockquote {
+    padding-inline: var(--text-pad-x);
+}
 
 /* Header & Section Navigation */
 .site-header {
@@ -83,6 +101,7 @@ h2 {
 @media (max-width: 768px) {
     :root {
         --page-pad-x: 0;
+        --text-pad-x: 0.6rem;
     }
 
     .site-header {
@@ -117,9 +136,6 @@ h2 {
         gap: 0.25rem 0.9rem;
     }
 }
-
-
-
 
 /* Gallery Grid & Image Styles */
 .gallery-grid {
@@ -173,7 +189,3 @@ h2 {
     height: 100%;
     border: 0;
 }
-
-
-
-
