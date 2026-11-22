@@ -20,52 +20,28 @@
       {{ $content = replace $content $match $html }}
     {{ end }}
 
-    {{/* 1. Handle .mp4 video wikilinks */}}
-    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.mp4)\s*(?:\|[^\]]+)?\s*\]\]` `<div class="video-bleed"><video width="100%" controls><source src="/assets/$1" type="video/mp4">Your browser does not support the video tag.</video></div>` $content }}
-
-    {{/* 2. Handle .webm video wikilinks */}}
-    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.webm)\s*(?:\|[^\]]+)?\s*\]\]` `<div class="video-bleed"><video width="100%" controls><source src="/assets/$1" type="video/webm">Your browser does not support the video tag.</video></div>` $content }}
-
-    {{/* 3. Handle .mov (QuickTime) video wikilinks */}}
-    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.mov)\s*(?:\|[^\]]+)?\s*\]\]` `<div class="video-bleed"><video width="100%" controls><source src="/assets/$1" type="video/quicktime">Your browser does not support the video tag.</video></div>` $content }}
-
-    {{/* 4. Handle .ogv (Ogg) video wikilinks */}}
-    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.ogv)\s*(?:\|[^\]]+)?\s*\]\]` `<div class="video-bleed"><video width="100%" controls><source src="/assets/$1" type="video/ogg">Your browser does not support the video tag.</video></div>` $content }}
-
-    {{/* 5. Clean up any remaining non-video Obsidian image tags */}}
-    {{ $content = replaceRE `!\[\[\s*[^\]\|\n]+\.(?:png|jpg|jpeg|gif|webp)\s*(?:\|[^\]]+)?\s*\]\]` "" $content }}
-
-
-
-    {{/* 6. Render processed markdown and keep .video-bleed outside .text-flow */}}
-    {{ $rendered := .RenderString $content }}
-    {{ $chunks := split $rendered `<div class="video-bleed">` }}
-    {{ if gt (len $chunks) 1 }}
-      {{ range $i, $chunk := $chunks }}
-        {{ if eq $i 0 }}
-          {{ if ne (trim (plainify $chunk) " \n\r\t") "" }}
-            <div class="text-flow">{{ $chunk | safeHTML }}</div>
-          {{ end }}
-        {{ else }}
-          {{/* Split on </video> so the video and its wrapper stay outside .text-flow */}}
-          {{ $afterVid := split $chunk "</video>" }}
-          <div class="video-bleed">{{ index $afterVid 0 | safeHTML }}</video></div>
-          {{ if gt (len $afterVid) 1 }}
-            {{ $tail := delimit (after 1 $afterVid) "</video>" }}
-            {{/* Strip any stray closing </div> that belonged only to .video-bleed */}}
-            {{ if ne (trim (plainify $tail) " \n\r\t") "" }}
-              <div class="text-flow">{{ $tail | safeHTML }}</div>
-            {{ end }}
-          {{ end }}
-        {{ end }}
+    {{/* Handle video wikilinks (.mp4, .webm, .mov, .ogv) as standalone .video-bleed blocks */}}
+    {{ range $match := findRE `!\[\[\s*[^\]\|\n]+\.(?:mp4|webm|mov|ogv)\s*(?:\|[^\]]+)?\s*\]\]` $content }}
+      {{ $file := trim (replaceRE `^!\[\[\s*([^\]\|]+).*` "$1" $match) " " }}
+      {{ $ext := lower (replaceRE `^.*\.([^.]+)$` "$1" $file) }}
+      {{ $mime := "video/mp4" }}
+      {{ if eq $ext "webm" }}{{ $mime = "video/webm" }}{{ end }}
+      {{ if eq $ext "mov" }}{{ $mime = "video/quicktime" }}{{ end }}
+      {{ if eq $ext "ogv" }}{{ $mime = "video/ogg" }}{{ end }}
+      {{ $src := printf "/assets/%s" $file }}
+      {{ with or ($page.Resources.Get $file) (resources.Get $file) (resources.Get (print "assets/" $file)) }}
+        {{ $src = .RelPermalink }}
       {{ end }}
-    {{ else }}
-      <div class="text-flow">{{ $rendered }}</div>
+      {{ $html := printf `<div class="video-bleed"><video width="100%%" controls><source src="%s" type="%s">Your browser does not support the video tag.</video></div>` ($src | safeURL) $mime }}
+      {{ $content = replace $content $match $html }}
     {{ end }}
 
+    {{/* Clean up any remaining non-video Obsidian image tags */}}
+    {{ $content = replaceRE `!\[\[\s*[^\]\|\n]+\.(?:png|jpg|jpeg|gif|webp)\s*(?:\|[^\]]+)?\s*\]\]` "" $content }}
 
-
-
+    {{/* Render full markdown cleanly in one pass */}}
+    {{ .RenderString $content }}
+    </div>
 
     <script>
     (() => {
@@ -98,7 +74,7 @@
     {{/* Find image references in the raw content (excludes .mp3, .mp4, etc.) */}}
     {{ $imgMatches := findRE `!\[\[\s*[^\]\|\n]+\.(?:png|jpg|jpeg|gif|webp)\s*(?:\|[^\]]+)?\s*\]\]` .RawContent }}
 
-    {{/* 3. ONLY show the gallery section if images actually exist */}}
+    {{/* ONLY show the gallery section if images actually exist */}}
     {{ if gt (len $imgMatches) 0 }}
     <section class="post-gallery-footer">
         <div class="text-flow">
@@ -144,4 +120,5 @@
     {{ end }}
 </article>
 {{ end }}
+
 
