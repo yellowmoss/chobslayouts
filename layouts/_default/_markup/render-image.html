@@ -167,39 +167,35 @@
 
 
 
+
+{{- $dest := .Destination -}}
 {{- if or (strings.Contains $dest "vimeo.com/") (strings.Contains $dest "player.vimeo.com/video/") -}}
   {{- $clean := strings.TrimSuffix "/" (index (split $dest "?") 0) -}}
   {{- $videoId := index (last 1 (split $clean "/")) 0 -}}
-  {{- $rawAlt := .Text | default "" -}}
+  {{- $rawAlt := strings.TrimSpace (.Text | default "") -}}
 
-  {{- /* Default fallback dimensions (9:16 vertical) */ -}}
-  {{- $w := "1080" -}}
-  {{- $h := "1920" -}}
-  {{- $title := $rawAlt -}}
-  {{- $hasExplicitSize := false -}}
+  {{- /* Default fallback dimensions */ -}}
+  {{- $w := "1920" -}}
+  {{- $h := "1080" -}}
+  {{- $title := "sandyride" -}}
 
-  {{- /* Match "WxH" (e.g. 1920x1080 or 1080X1920) or "W:H" (e.g. 16:9, 4:3) at start of alt text */ -}}
-  {{- $match := findRESubmatch `^\s*(\d+)\s*[xX:]\s*(\d+)\s*(.*)$` $rawAlt 1 -}}
+  {{- /* Extract WxH from alt text, e.g. "1920x1080" or "1920x1080 My Title" */ -}}
+  {{- $match := findRESubmatch `^(\d+)\s*[xX]\s*(\d+)(?:\s+(.*))?$` $rawAlt 1 -}}
   {{- if gt (len $match) 0 -}}
     {{- $parts := index $match 0 -}}
     {{- $w = index $parts 1 -}}
     {{- $h = index $parts 2 -}}
-    {{- $title = strings.TrimSpace (index $parts 3) -}}
-    {{- $hasExplicitSize = true -}}
+    {{- if ge (len $parts) 4 -}}
+      {{- $extra := strings.TrimSpace (index $parts 3) -}}
+      {{- if ne $extra "" -}}
+        {{- $title = $extra -}}
+      {{- end -}}
+    {{- end -}}
+  {{- else if ne $rawAlt "" -}}
+    {{- $title = $rawAlt -}}
   {{- end -}}
 
-  {{- if eq $title "" -}}
-    {{- $title = "sandyride" -}}
-  {{- end -}}
-
-  {{- $canonicalUrl := printf "https://vimeo.com/%s" $videoId -}}
-
-  <div
-    class="vimeo-stage"
-    data-vimeo-url="{{ $canonicalUrl }}"
-    data-has-size="{{ $hasExplicitSize }}"
-    style="--nat-w: {{ $w }}; --nat-h: {{ $h }};"
-  >
+  <div class="vimeo-stage" style="--nat-w: {{ $w }}; --nat-h: {{ $h }};">
     <iframe
       src="https://player.vimeo.com/video/{{ $videoId }}?autopause=0&amp;player_id=0&amp;app_id=58479&amp;loop=1"
       allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media; web-share"
@@ -210,9 +206,6 @@
   </div>
   {{- return -}}
 {{- end -}}
-
-
-
 
 
 

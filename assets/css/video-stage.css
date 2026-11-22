@@ -1,5 +1,6 @@
 /* Base fluid typography setup */
 :root {
+    /* Scales smoothly: minimum 1rem on mobile, growing with viewport width, capping at 1.125rem on desktop */
     font-size: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
 }
 
@@ -7,11 +8,12 @@ body {
     font-family: system-ui, -apple-system, sans-serif;
     line-height: 1.6;
     color: #222;
-    padding: 1rem;
+    padding: 0.5rem 1rem;
     max-width: 1400px;
     margin: 0 auto;
 }
 
+/* Fluid headings that scale proportionally between mobile and desktop */
 h1 {
     font-size: clamp(1.75rem, 1.5rem + 1.5vw, 2.5rem);
 }
@@ -22,45 +24,47 @@ h2 {
 
 /* Gallery Grid & Image Styles */
 .gallery-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    width: 100%;
-    max-width: 1400px;
-    margin: 1.5rem 0;
-    padding: 0;
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+    width: 100% !important;
+    max-width: 1400px !important;
+    margin: 1.5rem 0 !important;
+    padding: 0 !important;
 }
 
 .gallery-grid a {
-    display: block;
-    width: 100%;
-    text-align: left;
+    display: block !important;
+    width: 100% !important;
+    text-align: left !important;
 }
 
 .gallery-grid img {
-    width: 100%;
-    max-width: 700px;
-    height: auto;
-    display: block;
-    margin: 0;
-    border-radius: 4px;
+    width: 100% !important;
+    max-width: 700px !important;
+    height: auto !important;
+    display: block !important;
+    margin: 0 !important;
+    border-radius: 4px !important;
 }
 
-/* Adaptive Vimeo Stage (supports 16:9, 4:3, 9:16, etc.) */
+/* Adaptive Vimeo Stage (driven by inline --nat-w and --nat-h from render-image.html) */
 .vimeo-stage {
-    --nat-w: 1080;
-    --nat-h: 1920;
+    --nat-w: 1920;
+    --nat-h: 1080;
     --ratio: calc(var(--nat-w) / var(--nat-h));
+    --max-h: calc(100dvh - 1rem);
 
     position: relative;
-    aspect-ratio: var(--ratio);
-    width: min(
-        calc(var(--nat-w) * 1px),
+    width: 100%;
+    max-width: min(
         100%,
-        calc(90dvh * var(--ratio))
+        calc(var(--nat-w) * 1px),
+        calc(var(--max-h) * var(--ratio))
     );
-    max-height: 90dvh;
-    margin: 1.5rem auto;
+    max-height: var(--max-h);
+    aspect-ratio: var(--ratio);
+    margin: 0.5rem auto;
 }
 
 .vimeo-stage iframe {
@@ -70,10 +74,5 @@ h2 {
     height: 100%;
     border: 0;
 }
-
-
-
-
-
 
 
