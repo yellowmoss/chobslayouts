@@ -37,33 +37,31 @@
 
 
 
-    {{/* 6. Render processed markdown cleanly */}}
+    {{/* 6. Render processed markdown and keep .video-bleed outside .text-flow */}}
     {{ $rendered := .RenderString $content }}
-    {{ if in $rendered `<div class="video-bleed">` }}
-      {{ $chunks := split $rendered `<div class="video-bleed">` }}
+    {{ $chunks := split $rendered `<div class="video-bleed">` }}
+    {{ if gt (len $chunks) 1 }}
       {{ range $i, $chunk := $chunks }}
         {{ if eq $i 0 }}
           {{ if ne (trim (plainify $chunk) " \n\r\t") "" }}
             <div class="text-flow">{{ $chunk | safeHTML }}</div>
           {{ end }}
         {{ else }}
-          {{/* Split at the end of the video-bleed wrapper */}}
-          {{ $parts := split $chunk "</div></div>" }}
-          {{ if gt (len $parts) 1 }}
-            <div class="video-bleed">{{ index $parts 0 | safeHTML }}</div></div>
-            {{ $rest := delimit (after 1 $parts) "</div></div>" }}
-            {{ if ne (trim (plainify $rest) " \n\r\t") "" }}
-              <div class="text-flow">{{ $rest | safeHTML }}</div>
+          {{/* Split on </video> so the video and its wrapper stay outside .text-flow */}}
+          {{ $afterVid := split $chunk "</video>" }}
+          <div class="video-bleed">{{ index $afterVid 0 | safeHTML }}</video></div>
+          {{ if gt (len $afterVid) 1 }}
+            {{ $tail := delimit (after 1 $afterVid) "</video>" }}
+            {{/* Strip any stray closing </div> that belonged only to .video-bleed */}}
+            {{ if ne (trim (plainify $tail) " \n\r\t") "" }}
+              <div class="text-flow">{{ $tail | safeHTML }}</div>
             {{ end }}
-          {{ else }}
-            <div class="video-bleed">{{ $chunk | safeHTML }}</div>
           {{ end }}
         {{ end }}
       {{ end }}
     {{ else }}
       <div class="text-flow">{{ $rendered }}</div>
     {{ end }}
-
 
 
 

@@ -33,7 +33,7 @@ h2 {
     line-height: 1.25;
 }
 
-/* Maintainable text padding hook without whitelisting every HTML tag */
+/* Text-flow spacing hook for readable text blocks, header, footer, and audio player */
 .text-flow,
 .site-header,
 footer,
@@ -41,20 +41,12 @@ footer,
     padding-inline: var(--text-pad-x);
 }
 
-/* Prevent double padding when .text-flow elements nest inside one another */
+/* Prevent double horizontal padding when .text-flow elements nest */
 .text-flow .text-flow {
     padding-inline: 0;
 }
 
-
-.text-flow :is(video, img, .video-bleed, .vimeo-stage, .gallery-grid) {
-    padding-inline: 0;
-}
-
-
-
-
-/* Guarantee zero horizontal padding on media elements and containers */
+/* Keep layout containers and media flush with zero horizontal padding */
 main,
 article,
 section,
@@ -62,14 +54,18 @@ section,
 .video-bleed,
 .vimeo-stage,
 .gallery-grid,
+.video-bleed > video,
 video,
 img {
     padding-inline: 0;
 }
 
-
-
-
+.video-bleed > video,
+video {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+}
 
 /* Header & Section Navigation */
 .site-header {
