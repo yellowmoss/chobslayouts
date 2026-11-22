@@ -7,7 +7,7 @@
     </div>
   {{- end -}}
 
-  {{- $pages := .RegularPages.ByDate.Reverse -}}
+  {{- $pages := .Pages.ByDate.Reverse -}}
   {{- if $pages -}}
     {{- $paginator := .Paginate $pages 10 -}}
     <ul>
