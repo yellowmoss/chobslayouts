@@ -1,29 +1,32 @@
 {{- define "main" -}}
-  <h1>{{ .Title }}</h1>
+  <div class="text-flow">
+    <h1>{{ .Title }}</h1>
 
-  {{- with .Content -}}
-    <div class="section-intro">
-      {{ . }}
-    </div>
-  {{- end -}}
+    {{- with .Content -}}
+      <div class="section-intro">
+        {{ . }}
+      </div>
+    {{- end -}}
 
-  {{- $isTaxonomy := eq .Kind "taxonomy" -}}
-  {{- $pages := cond $isTaxonomy .Pages.ByTitle .Pages.ByDate.Reverse -}}
+    {{- $isTaxonomy := eq .Kind "taxonomy" -}}
+    {{- $pages := cond $isTaxonomy .Pages.ByTitle .Pages.ByDate.Reverse -}}
 
-  {{- if $pages -}}
-    {{- $paginator := .Paginate $pages 10 -}}
-    <ul>
-      {{- range $paginator.Pages -}}
-        <li>
-          <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
-          {{- if $isTaxonomy -}}
-            ({{ len .Pages }})
-          {{- end -}}
-        </li>
-      {{- end -}}
-    </ul>
+    {{- if $pages -}}
+      {{- $paginator := .Paginate $pages 10 -}}
+      <ul>
+        {{- range $paginator.Pages -}}
+          <li>
+            <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+            {{- if $isTaxonomy -}}
+              ({{ len .Pages }})
+            {{- end -}}
+          </li>
+        {{- end -}}
+      </ul>
 
-    {{- partial "pagination.html" $ -}}
-  {{- end -}}
+      {{- partial "pagination.html" $ -}}
+    {{- end -}}
+  </div>
 {{- end -}}
+
 
