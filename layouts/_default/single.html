@@ -1,7 +1,9 @@
 {{ define "main" }}
 <article>
-    <h1>{{ .Title }}</h1>
-    <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "January 2, 2006" }}</time>
+    <div class="text-flow">
+        <h1>{{ .Title }}</h1>
+        <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "January 2, 2006" }}</time>
+    </div>
 
     <div class="content">
     {{ $content := .RawContent }}
@@ -71,7 +73,9 @@
     {{/* 3. ONLY show the gallery section if images actually exist */}}
     {{ if gt (len $imgMatches) 0 }}
     <section class="post-gallery-footer">
-        <h3>Post Gallery</h3>
+        <div class="text-flow">
+            <h3>Post Gallery</h3>
+        </div>
         <div class="gallery-grid">
             {{ range $imgMatches }}
               {{/* Extract the clean filename */}}
@@ -112,4 +116,5 @@
     {{ end }}
 </article>
 {{ end }}
+
 

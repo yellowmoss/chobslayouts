@@ -33,18 +33,26 @@ h2 {
     line-height: 1.25;
 }
 
-/* Pad non-media content blocks cleanly without shifting videos or galleries */
-:is(.site-header, footer, main, article, section, div):not(
-    .vimeo-stage,
-    .gallery-grid,
-    :has(.vimeo-stage, .gallery-grid, img, iframe)
-) {
+/* Maintainable text padding hook without whitelisting every HTML tag */
+.text-flow,
+.site-header,
+footer,
+.mp3-box {
     padding-inline: var(--text-pad-x);
 }
 
-/* Prevent stacked horizontal padding on nested content blocks */
-:is(.site-header, footer, main, article, section, div)
-    :is(main, article, section, div):not(:has(.vimeo-stage, .gallery-grid, img, iframe)) {
+/* Prevent double padding when .text-flow elements nest inside one another */
+.text-flow .text-flow {
+    padding-inline: 0;
+}
+
+/* Keep media & general content containers free of left-padding shifts */
+main,
+article,
+section,
+.content,
+.vimeo-stage,
+.gallery-grid {
     padding-inline: 0;
 }
 
@@ -185,6 +193,5 @@ h2 {
     height: 100%;
     border: 0;
 }
-
 
 
