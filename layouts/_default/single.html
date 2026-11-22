@@ -21,34 +21,34 @@
     {{ end }}
 
     {{/* 1. Handle .mp4 video wikilinks */}}
-    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.mp4)\s*(?:\|[^\]]+)?\s*\]\]` `<video width="100%" controls><source src="/assets/$1" type="video/mp4">Your browser does not support the video tag.</video>` $content }}
+    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.mp4)\s*(?:\|[^\]]+)?\s*\]\]` `<div class="video-bleed"><video width="100%" controls><source src="/assets/$1" type="video/mp4">Your browser does not support the video tag.</video></div>` $content }}
 
     {{/* 2. Handle .webm video wikilinks */}}
-    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.webm)\s*(?:\|[^\]]+)?\s*\]\]` `<video width="100%" controls><source src="/assets/$1" type="video/webm">Your browser does not support the video tag.</video>` $content }}
+    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.webm)\s*(?:\|[^\]]+)?\s*\]\]` `<div class="video-bleed"><video width="100%" controls><source src="/assets/$1" type="video/webm">Your browser does not support the video tag.</video></div>` $content }}
 
     {{/* 3. Handle .mov (QuickTime) video wikilinks */}}
-    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.mov)\s*(?:\|[^\]]+)?\s*\]\]` `<video width="100%" controls><source src="/assets/$1" type="video/quicktime">Your browser does not support the video tag.</video>` $content }}
+    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.mov)\s*(?:\|[^\]]+)?\s*\]\]` `<div class="video-bleed"><video width="100%" controls><source src="/assets/$1" type="video/quicktime">Your browser does not support the video tag.</video></div>` $content }}
 
     {{/* 4. Handle .ogv (Ogg) video wikilinks */}}
-    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.ogv)\s*(?:\|[^\]]+)?\s*\]\]` `<video width="100%" controls><source src="/assets/$1" type="video/ogg">Your browser does not support the video tag.</video>` $content }}
+    {{ $content = replaceRE `!\[\[\s*([^\]\|\n]+\.ogv)\s*(?:\|[^\]]+)?\s*\]\]` `<div class="video-bleed"><video width="100%" controls><source src="/assets/$1" type="video/ogg">Your browser does not support the video tag.</video></div>` $content }}
 
     {{/* 5. Clean up any remaining non-video Obsidian image tags */}}
     {{ $content = replaceRE `!\[\[\s*[^\]\|\n]+\.(?:png|jpg|jpeg|gif|webp)\s*(?:\|[^\]]+)?\s*\]\]` "" $content }}
 
-    {{/* 6. Render processed markdown and wrap non-video text segments in .text-flow */}}
+    {{/* 6. Render processed markdown cleanly */}}
     {{ $rendered := .RenderString $content }}
-    {{ if in $rendered "<video" }}
-      {{ $parts := split $rendered "<video" }}
+    {{ $parts := split $rendered `<div class="video-bleed">` }}
+    {{ if gt (len $parts) 1 }}
       {{ range $i, $part := $parts }}
         {{ if eq $i 0 }}
           {{ if ne (trim (plainify $part) " \n\r\t") "" }}
             <div class="text-flow">{{ $part | safeHTML }}</div>
           {{ end }}
         {{ else }}
-          {{ $vidSplit := split $part "</video>" }}
-          <video{{ index $vidSplit 0 | safeHTML }}</video>
-          {{ if gt (len $vidSplit) 1 }}
-            {{ $after := index $vidSplit 1 }}
+          {{ $endSplit := split $part "</div>" }}
+          <div class="video-bleed">{{ index $endSplit 0 | safeHTML }}</div>
+          {{ if gt (len $endSplit) 1 }}
+            {{ $after := delimit (after 1 $endSplit) "</div>" }}
             {{ if ne (trim (plainify $after) " \n\r\t") "" }}
               <div class="text-flow">{{ $after | safeHTML }}</div>
             {{ end }}
