@@ -10,11 +10,18 @@
       <li>
         <a href="{{ site.Home.RelPermalink }}" style="text-decoration: none;">Home</a>
       </li>
-      {{ range site.Sections.ByWeight }}
-        <li>
-          <a href="{{ .RelPermalink }}" style="text-decoration: none;">{{ .LinkTitle }}</a>
-        </li>
-      {{ end }}
+
+     {{ with site.GetPage "/tags" }}
+     <li>
+       <a href="{{ .RelPermalink }}" style="text-decoration: none;">{{ .LinkTitle }}</a>
+     </li>
+     {{ end }}
+
+     {{ range site.Sections.ByWeight }}
+     <li>
+       <a href="{{ .RelPermalink }}" style="text-decoration: none;">{{ .LinkTitle }}</a>
+     </li>
+     {{ end }}
     </ul>
   </nav>
 </header>
