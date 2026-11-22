@@ -1,9 +1,26 @@
-{{ define "main" }}
-    <h1>{{ .Title }}</h1>
-    {{ .Content }}
+{{- define "main" -}}
+  <h1>{{ .Title }}</h1>
+
+  {{- with .Content -}}
+    <div class="section-intro">
+      {{ . }}
+    </div>
+  {{- end -}}
+
+  {{- $pages := .RegularPages.ByDate.Reverse -}}
+  {{- $paginator := .Paginate $pages 10 -}}
+
+  {{- with $paginator.Pages -}}
     <ul>
-        {{ range .Pages }}
-            <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
-        {{ end }}
+      {{- range . -}}
+        <li>
+          <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+        </li>
+      {{- end -}}
     </ul>
-{{ end }}
+
+    {{- partial "pagination.html" $ -}}
+  {{- else -}}
+    <p>No posts found in this section yet.</p>
+  {{- end -}}
+{{- end -}}
