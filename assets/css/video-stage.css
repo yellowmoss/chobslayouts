@@ -33,17 +33,40 @@ h2 {
     line-height: 1.25;
 }
 
-/* Systematic horizontal padding on text-bearing containers */
-.site-header,
+/* Keep layout containers free of left-padding shifts on media */
 main,
 article,
-section,
+section {
+    padding-inline: 0;
+}
+
+/* Header & Footer text breathing room */
+.site-header,
 footer {
     padding-inline: var(--text-pad-x);
 }
 
-/* Avoid double horizontal padding when <article> or <section> sits inside <main> */
-main :is(main, article, section) {
+/* Pad text elements without shifting .vimeo-stage or .gallery-grid */
+:is(main, article, section) :is(
+    p:not(:has(.vimeo-stage, .gallery-grid, img)),
+    h1,
+    h2,
+    h3,
+    h4,
+    ul,
+    ol,
+    blockquote,
+    figcaption,
+    time,
+    small,
+    a
+) {
+    padding-inline: var(--text-pad-x);
+}
+
+/* Avoid double horizontal padding when text sits inside a padded text block */
+:is(p, h1, h2, h3, h4, ul, ol, blockquote, figcaption)
+    :is(time, small, a, span) {
     padding-inline: 0;
 }
 
@@ -147,6 +170,7 @@ main :is(main, article, section) {
     display: block !important;
     width: 100% !important;
     text-align: left !important;
+    padding-inline: 0 !important;
 }
 
 .gallery-grid img {
@@ -184,22 +208,5 @@ main :is(main, article, section) {
     height: 100%;
     border: 0;
 }
-
-/* On narrow screens, pull media blocks edge-to-edge out of padded text containers */
-@media (max-width: 768px) {
-    .gallery-grid {
-        width: 100vw !important;
-        max-width: 100vw !important;
-        margin-inline: calc(50% - 50vw) !important;
-    }
-
-    .vimeo-stage {
-        max-width: min(100vw, calc(var(--max-h) * var(--ratio)));
-        width: min(100vw, calc(var(--max-h) * var(--ratio)));
-        margin-inline: auto;
-    }
-}
-
-
 
 
