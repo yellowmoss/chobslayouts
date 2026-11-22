@@ -1,7 +1,7 @@
 /* Base fluid typography & spacing setup */
 :root {
     --page-pad-x: clamp(0.5rem, 2vw, 1.25rem);
-    --text-pad-x: clamp(0.6rem, 2.5vw, 1.25rem);
+    --text-pad-x: clamp(0.65rem, 2.5vw, 1.25rem);
     /* Scales smoothly: minimum 1rem on mobile, growing with viewport width, capping at 1.125rem on desktop */
     font-size: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
 }
@@ -33,46 +33,24 @@ h2 {
     line-height: 1.25;
 }
 
-
-
-/* Text breathing room across header, main content, taxonomy, and footer */
+/* Systematic horizontal padding on text-bearing containers */
 .site-header,
-footer,
-:is(main, article, section) :is(
-    p:not(:has(.vimeo-stage, .gallery-grid)),
-    h1,
-    h2,
-    h3,
-    h4,
-    ul,
-    ol,
-    blockquote,
-    figcaption,
-    time,
-    small,
-    .date,
-    .post-date,
-    .post-meta,
-    .read-more,
-    .tags,
-    [class*="tag"],
-    a[href*="/tags/"]
-) {
+main,
+article,
+section,
+footer {
     padding-inline: var(--text-pad-x);
 }
 
-/* Prevent double horizontal padding when a text element sits inside another padded text element */
-:is(p, h1, h2, h3, h4, ul, ol, blockquote, figcaption, .post-meta, .tags, [class*="tag"])
-    :is(p, h1, h2, h3, h4, ul, ol, blockquote, figcaption, time, small, a) {
+/* Avoid double horizontal padding when <article> or <section> sits inside <main> */
+main :is(main, article, section) {
     padding-inline: 0;
 }
-
-
-
 
 /* Header & Section Navigation */
 .site-header {
     margin-bottom: 1.25rem;
+    padding-top: 0.25rem;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid #eee;
 }
@@ -118,7 +96,7 @@ footer,
 @media (max-width: 768px) {
     :root {
         --page-pad-x: 0;
-        --text-pad-x: 0.6rem;
+        --text-pad-x: 0.65rem;
     }
 
     .site-header {
@@ -206,3 +184,22 @@ footer,
     height: 100%;
     border: 0;
 }
+
+/* On narrow screens, pull media blocks edge-to-edge out of padded text containers */
+@media (max-width: 768px) {
+    .gallery-grid {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin-inline: calc(50% - 50vw) !important;
+    }
+
+    .vimeo-stage {
+        max-width: min(100vw, calc(var(--max-h) * var(--ratio)));
+        width: min(100vw, calc(var(--max-h) * var(--ratio)));
+        margin-inline: auto;
+    }
+}
+
+
+
+
