@@ -39,7 +39,7 @@
     {{/* Clean up any remaining non-video Obsidian image tags */}}
     {{ $content = replaceRE `!\[\[\s*[^\]\|\n]+\.(?:png|jpg|jpeg|gif|webp)\s*(?:\|[^\]]+)?\s*\]\]` "" $content }}
 
-    {{/* Resolve Obsidian [[filename]] (and [[filename|Alias]] / [[filename#Heading]]) directly to Hugo page URLs */}}
+    {{/* Resolve Obsidian [[filename]] (and [[filename|Alias]] / [[filename#Heading]]) to Hugo page URLs */}}
     {{ range $match := findRE `(?m)(?:^|[^!])\[\[\s*[^\]\n]+\s*\]\]` $content }}
       {{ $prefix := replaceRE `^(.*?)(\[\[.*)$` "$1" $match }}
       {{ $inner := replaceRE `^.*?\[\[\s*(.*?)\s*\]\]$` "$1" $match }}
@@ -60,31 +60,60 @@
         {{ $anchor = anchorize (strings.TrimSpace (index $hParts 1)) }}
       {{ end }}
 
-      {{/* Strip optional leading /content/ or trailing .md if present */}}
-      {{ $cleanName := strings.TrimSuffix ".md" (strings.TrimPrefix "/content/" (strings.TrimPrefix "content/" $noteName)) }}
+      {{/* Normalize path: strip /content/, content/, leading /, and .md */}}
+      {{ $cleanPath := strings.TrimPrefix "/" (strings.TrimSuffix ".md" (strings.TrimPrefix "/content/" (strings.TrimPrefix "content/" $noteName))) }}
+      {{ $wantSlug := urlize $cleanPath }}
 
-      {{/* Try direct path lookups first (e.g. "section/filename" or "filename") */}}
-      {{ $targetPage := site.GetPage $cleanName }}
+      {{/* 1. Direct path / page lookup (e.g. "section/filename") */}}
+      {{ $targetPage := site.GetPage $cleanPath }}
       {{ if not $targetPage }}
-        {{ $targetPage = $page.GetPage $cleanName }}
+        {{ $targetPage = $page.GetPage $cleanPath }}
       {{ end }}
 
-      {{/* Fallback: match by filename (ContentBaseName), Title, or Slug across site pages */}}
+      {{/* 2. Search across site pages by filename (ContentBaseName), path, slug, or title */}}
       {{ if not $targetPage }}
+        {{ $fallbackMatch := false }}
         {{ range site.RegularPages }}
           {{ $base := "" }}
-          {{ with .File }}{{ $base = .ContentBaseName }}{{ end }}
-          {{ if or (eq (lower $base) (lower $cleanName)) (eq (lower .Title) (lower $cleanName)) (eq (lower .Slug) (lower $cleanName)) }}
-            {{ $targetPage = . }}
+          {{ $filePath := "" }}
+          {{ with .File }}
+            {{ $base = .ContentBaseName }}
+            {{ $filePath = strings.TrimSuffix ".md" (replace .Path "\\" "/") }}
           {{ end }}
+
+          {{ $isMatch := or
+            (eq (urlize $base) $wantSlug)
+            (eq (urlize $filePath) $wantSlug)
+            (eq (urlize .Title) $wantSlug)
+            (eq (urlize .Slug) $wantSlug)
+          }}
+
+          {{ if $isMatch }}
+            {{ if eq .Section $page.Section }}
+              {{ $targetPage = . }}
+            {{ else if not $fallbackMatch }}
+              {{ $fallbackMatch = . }}
+            {{ end }}
+          {{ end }}
+        {{ end }}
+        {{ if and (not $targetPage) $fallbackMatch }}
+          {{ $targetPage = $fallbackMatch }}
         {{ end }}
       {{ end }}
 
       {{ $label := cond (ne $alias "") $alias $noteName }}
-      {{ $href := printf "/%s/" (urlize $cleanName) }}
+      {{ $href := "" }}
       {{ if $targetPage }}
         {{ $href = $targetPage.RelPermalink }}
+      {{ else }}
+        {{/* If current page is in a section and note has no slash, try /<section>/<slug>/ */}}
+        {{ if and $page.Section (not (in $cleanPath "/")) }}
+          {{ $href = printf "/%s/%s/" $page.Section $wantSlug }}
+        {{ else }}
+          {{ $href = printf "/%s/" $wantSlug }}
+        {{ end }}
       {{ end }}
+
       {{ if ne $anchor "" }}
         {{ $href = printf "%s#%s" $href $anchor }}
       {{ end }}
