@@ -1,6 +1,10 @@
+
+
 {{ define "main" }}
   <div class="text-flow">
+
   <h1>{{ .Title }}</h1>
+
   {{- with .Content -}}
     <div class="section-intro">
       {{ . }}
@@ -9,13 +13,18 @@
 
   {{- $pages := .Pages.ByDate.Reverse -}}
   {{- if $pages -}}
+    {{- $paginator := .Paginate $pages 12 -}}
     <div class="summary-list">
-      {{- range first 12 $pages -}}
+      {{- range $paginator.Pages -}}
         {{- partial "page-summary.html" (dict "page" . "wordCount" 20) -}}
       {{- end -}}
     </div>
+
+    {{- partial "pagination.html" . -}}
   {{- else -}}
     <p>No pages found for this term.</p>
   {{- end -}}
+
     </div>
+
 {{ end }}
