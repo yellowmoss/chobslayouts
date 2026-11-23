@@ -9,7 +9,7 @@
     {{ $content := .RawContent }}
     {{ $page := . }}
 
-    {{/* Handle .mp3 wikilinks */}}
+    {{/* 1. Handle .mp3 wikilinks */}}
     {{ range $match := findRE `!\[\[\s*[^\]\|\n]+\.mp3\s*(?:\|[^\]]+)?\s*\]\]` $content }}
       {{ $file := trim (replaceRE `^!\[\[\s*([^\]\|]+).*` "$1" $match) " " }}
       {{ $src := printf "/%s" $file }}
@@ -20,7 +20,7 @@
       {{ $content = replace $content $match $html }}
     {{ end }}
 
-    {{/* Handle video wikilinks (.mp4, .webm, .mov, .ogv) as standalone .video-bleed blocks */}}
+    {{/* 2. Handle video wikilinks (.mp4, .webm, .mov, .ogv) */}}
     {{ range $match := findRE `!\[\[\s*[^\]\|\n]+\.(?:mp4|webm|mov|ogv)\s*(?:\|[^\]]+)?\s*\]\]` $content }}
       {{ $file := trim (replaceRE `^!\[\[\s*([^\]\|]+).*` "$1" $match) " " }}
       {{ $ext := lower (replaceRE `^.*\.([^.]+)$` "$1" $file) }}
@@ -36,94 +36,84 @@
       {{ $content = replace $content $match $html }}
     {{ end }}
 
-    {{/* Clean up any remaining non-video Obsidian image tags */}}
+    {{/* 3. Remove image wikilinks from body (rendered in gallery below) */}}
     {{ $content = replaceRE `!\[\[\s*[^\]\|\n]+\.(?:png|jpg|jpeg|gif|webp)\s*(?:\|[^\]]+)?\s*\]\]` "" $content }}
 
-    {{/* Resolve Obsidian [[filename]] / [[filename|Alias]] / [[filename#Heading]] to <a href="...">label</a> */}}
-    {{ range $rawMatch := findRE `(?m)(?:^|[^!])\[\[[^\]\n]+\]\]` $content }}
-      {{/* Strip any leading non-wikilink character captured before [[ */}}
-      {{ $leading := "" }}
-      {{ $wiki := $rawMatch }}
-      {{ if not (hasPrefix $rawMatch "[[") }}
-        {{ $leading = substr $rawMatch 0 1 }}
-        {{ $wiki = substr $rawMatch 1 (sub (len $rawMatch) 1) }}
-      {{ end }}
+    {{/* 4. Convert [[filename]], [[filename|Alias]], and [[filename#Heading]] to <a href="...">label</a> */}}
+    {{ $links := findRE `\[\[[^\]\n]+\]\]` $content }}
+    {{ range $wiki := $links }}
+      {{ $body := strings.TrimSpace (strings.TrimSuffix "]]" (strings.TrimPrefix "[[" $wiki)) }}
 
-      {{ $inner := strings.TrimSpace (strings.TrimSuffix "]]" (strings.TrimPrefix "[[" $wiki)) }}
-
-      {{ $targetRaw := $inner }}
+      {{ $rawTarget := $body }}
       {{ $alias := "" }}
-      {{ if in $inner "|" }}
-        {{ $parts := split $inner "|" }}
-        {{ $targetRaw = strings.TrimSpace (index $parts 0) }}
+      {{ if in $body "|" }}
+        {{ $parts := split $body "|" }}
+        {{ $rawTarget = strings.TrimSpace (index $parts 0) }}
         {{ $alias = strings.TrimSpace (index $parts 1) }}
       {{ end }}
 
-      {{ $noteName := $targetRaw }}
+      {{ $notePart := $rawTarget }}
       {{ $anchor := "" }}
-      {{ if in $targetRaw "#" }}
-        {{ $hParts := split $targetRaw "#" }}
-        {{ $noteName = strings.TrimSpace (index $hParts 0) }}
+      {{ if in $rawTarget "#" }}
+        {{ $hParts := split $rawTarget "#" }}
+        {{ $notePart = strings.TrimSpace (index $hParts 0) }}
         {{ $anchor = anchorize (strings.TrimSpace (index $hParts 1)) }}
       {{ end }}
 
-      {{ $cleanPath := strings.TrimPrefix "/" (strings.TrimSuffix ".md" (strings.TrimPrefix "/content/" (strings.TrimPrefix "content/" $noteName))) }}
-      {{ $wantSlug := urlize $cleanPath }}
+      {{ $clean := strings.TrimPrefix "/" (strings.TrimSuffix ".md" (strings.TrimPrefix "/content/" (strings.TrimPrefix "content/" $notePart))) }}
+      {{ $slug := urlize $clean }}
 
-      {{ $targetPage := site.GetPage $cleanPath }}
+      {{ $targetPage := site.GetPage $clean }}
       {{ if not $targetPage }}
-        {{ $targetPage = $page.GetPage $cleanPath }}
+        {{ $targetPage = $page.GetPage $clean }}
       {{ end }}
 
       {{ if not $targetPage }}
-        {{ $fallbackMatch := false }}
+        {{ $anyMatch := false }}
         {{ range site.RegularPages }}
           {{ $base := "" }}
-          {{ $filePath := "" }}
+          {{ $rel := "" }}
           {{ with .File }}
             {{ $base = .ContentBaseName }}
-            {{ $filePath = strings.TrimSuffix ".md" (replace .Path "\\" "/") }}
+            {{ $rel = strings.TrimSuffix ".md" (replace .Path "\\" "/") }}
           {{ end }}
-
-          {{ $isMatch := or
-            (eq (urlize $base) $wantSlug)
-            (eq (urlize $filePath) $wantSlug)
-            (eq (urlize .Title) $wantSlug)
-            (eq (urlize .Slug) $wantSlug)
+          {{ $matched := or
+            (eq (urlize $base) $slug)
+            (eq (urlize $rel) $slug)
+            (eq (urlize .Title) $slug)
+            (eq (urlize .Slug) $slug)
           }}
-
-          {{ if $isMatch }}
+          {{ if $matched }}
             {{ if eq .Section $page.Section }}
               {{ $targetPage = . }}
-            {{ else if not $fallbackMatch }}
-              {{ $fallbackMatch = . }}
+            {{ else if not $anyMatch }}
+              {{ $anyMatch = . }}
             {{ end }}
           {{ end }}
         {{ end }}
-        {{ if and (not $targetPage) $fallbackMatch }}
-          {{ $targetPage = $fallbackMatch }}
+        {{ if and (not $targetPage) $anyMatch }}
+          {{ $targetPage = $anyMatch }}
         {{ end }}
       {{ end }}
 
-      {{ $label := cond (ne $alias "") $alias $noteName }}
+      {{ $label := cond (ne $alias "") $alias $notePart }}
       {{ $href := "" }}
       {{ if $targetPage }}
         {{ $href = $targetPage.RelPermalink }}
-      {{ else if and $page.Section (not (in $cleanPath "/")) }}
-        {{ $href = printf "/%s/%s/" $page.Section $wantSlug }}
+      {{ else if and $page.Section (not (in $clean "/")) }}
+        {{ $href = printf "/%s/%s/" $page.Section $slug }}
       {{ else }}
-        {{ $href = printf "/%s/" $wantSlug }}
+        {{ $href = printf "/%s/" $slug }}
       {{ end }}
-
       {{ if ne $anchor "" }}
         {{ $href = printf "%s#%s" $href $anchor }}
       {{ end }}
 
-      {{ $replacement := printf `%s<a href="%s">%s</a>` $leading ($href | safeURL) $label }}
-      {{ $content = replace $content $rawMatch $replacement }}
+      {{ $anchorHTML := printf `<a href="%s">%s</a>` ($href | safeURL) $label }}
+      {{ $content = replace $content $wiki $anchorHTML }}
     {{ end }}
 
-    {{/* Render full markdown cleanly in one pass */}}
+    {{/* 5. Render Markdown */}}
     {{ .RenderString $content }}
     </div>
 
@@ -155,10 +145,8 @@
     })();
     </script>
 
-    {{/* Find image references in the raw content (excludes .mp3, .mp4, etc.) */}}
     {{ $imgMatches := findRE `!\[\[\s*[^\]\|\n]+\.(?:png|jpg|jpeg|gif|webp)\s*(?:\|[^\]]+)?\s*\]\]` .RawContent }}
 
-    {{/* ONLY show the gallery section if images actually exist */}}
     {{ if gt (len $imgMatches) 0 }}
     <section class="post-gallery-footer">
         <div class="text-flow">
@@ -166,18 +154,15 @@
         </div>
         <div class="gallery-grid">
             {{ range $imgMatches }}
-              {{/* Extract the clean filename */}}
               {{ $filename := replaceRE `!\[\[\s*([^\]\|]+).*` "$1" . }}
               {{ $filename = trim $filename " " }}
 
-              {{/* Fetch from global assets */}}
               {{ $res := resources.Get $filename }}
               {{ if not $res }}
                 {{ $res = resources.Get (print "assets/" $filename) }}
               {{ end }}
 
               {{ if and $res (reflect.IsImageResourceProcessable $res) }}
-                {{/* Resize thumbnail */}}
                 {{ $thumb := "" }}
                 {{ if gt $res.Width 700 }}
                   {{ $thumb = $res.Resize "700x webp q85" }}
@@ -185,7 +170,6 @@
                   {{ $thumb = $res.Process "webp q85" }}
                 {{ end }}
 
-                {{/* Resize large version for lightbox */}}
                 {{ $large := "" }}
                 {{ if gt $res.Width 1600 }}
                   {{ $large = $res.Resize "1600x webp q90" }}
@@ -204,3 +188,5 @@
     {{ end }}
 </article>
 {{ end }}
+
+
