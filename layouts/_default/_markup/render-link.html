@@ -1,0 +1,27 @@
+{{- $dest := .Destination -}}
+{{- $text := .Text -}}
+{{- $u := urls.Parse $dest -}}
+{{- $isExternal := or (eq $u.Scheme "http") (eq $u.Scheme "https") (strings.HasPrefix $dest "//") -}}
+
+{{- if $isExternal -}}
+  <a href="{{ $dest | safeURL }}" target="_blank" rel="noopener noreferrer">{{ $text | safeHTML }}</a>
+{{- else -}}
+  {{- $cleanPath := strings.TrimSuffix ".md" (strings.TrimPrefix "./" $u.Path) -}}
+  {{- $page := .Page.GetPage $cleanPath -}}
+  {{- if not $page -}}
+    {{- $page = site.GetPage $cleanPath -}}
+  {{- end -}}
+
+  {{- $href := $dest -}}
+  {{- if $page -}}
+    {{- $href = $page.RelPermalink -}}
+    {{- if $u.Fragment -}}
+      {{- $href = printf "%s#%s" $href $u.Fragment -}}
+    {{- end -}}
+  {{- else -}}
+    {{- $href = $dest | relURL -}}
+  {{- end -}}
+
+  <a href="{{ $href | safeURL }}"{{ with .Title }} title="{{ . }}"{{ end }}>{{ $text | safeHTML }}</a>
+{{- end -}}
+
