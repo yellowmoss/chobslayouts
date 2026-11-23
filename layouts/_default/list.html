@@ -1,26 +1,10 @@
+
 {{- define "main" -}}
   <div class="text-flow">
     <h1>{{ .Title }}</h1>
 
-    {{- with .Content -}}
-      <div class="section-intro">
-        {{ . }}
-      </div>
-    {{- end -}}
+    {{- partial "post-list.html" . -}}
 
-    {{- $pages := .Pages.ByDate.Reverse -}}
-    {{- if $pages -}}
-      {{- $paginator := .Paginate $pages 10 -}}
-      <ul>
-        {{- range $paginator.Pages -}}
-          <li>
-            <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
-          </li>
-        {{- end -}}
-      </ul>
-
-      {{- partial "pagination.html" $ -}}
-    {{- end -}}
   </div>
 {{- end -}}
 

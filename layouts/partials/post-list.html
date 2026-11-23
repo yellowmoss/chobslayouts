@@ -1,0 +1,28 @@
+{{- with .Content -}}
+  <div class="section-intro">
+    {{ . }}
+  </div>
+{{- end -}}
+
+{{- $pages := .Pages.ByDate.Reverse -}}
+{{- if $pages -}}
+  {{- $paginator := .Paginate $pages 10 -}}
+  <ul class="post-list">
+    {{- range $paginator.Pages -}}
+      {{- $words := split .Plain " " -}}
+      {{- $excerpt := delimit (first 30 $words) " " -}}
+      <li>
+        <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
+        {{- if $excerpt -}}
+          <p class="post-excerpt">
+            {{- $excerpt -}}{{- if gt (len $words) 30 -}}…{{- end -}}
+          </p>
+        {{- end -}}
+      </li>
+    {{- end -}}
+  </ul>
+
+  {{- partial "pagination.html" . -}}
+{{- else -}}
+  <p>No posts found.</p>
+{{- end -}}

@@ -13,16 +13,8 @@
 
     {{- if $pages -}}
       {{- $paginator := .Paginate $pages 12 -}}
-      <ul>
-        {{- range $paginator.Pages -}}
-          <li>
-            <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
-            {{- if $isTaxonomy -}}
-              ({{ len .Pages }})
-            {{- end -}}
-          </li>
-        {{- end -}}
-      </ul>
+
+      {{- partial "post-list.html" $ -}}
 
       {{- partial "pagination.html" $ -}}
     {{- end -}}
