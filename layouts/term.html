@@ -1,7 +1,21 @@
-<p>Template: {{ templates.Current.Name }} | Kind: {{ .Kind }}</p>
 {{ define "main" }}
   <div class="text-flow">
   <h1>{{ .Title }}</h1>
-  {{- partial "post-list.html" (dict "page" . "pageSize" 12 "wordCount" 20) -}}
+  {{- with .Content -}}
+    <div class="section-intro">
+      {{ . }}
+    </div>
+  {{- end -}}
+
+  {{- $pages := .Pages.ByDate.Reverse -}}
+  {{- if $pages -}}
+    <div class="summary-list">
+      {{- range first 12 $pages -}}
+        {{- partial "page-summary.html" (dict "page" . "wordCount" 20) -}}
+      {{- end -}}
+    </div>
+  {{- else -}}
+    <p>No pages found for this term.</p>
+  {{- end -}}
     </div>
 {{ end }}
