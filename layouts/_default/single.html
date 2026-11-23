@@ -39,10 +39,17 @@
     {{/* Clean up any remaining non-video Obsidian image tags */}}
     {{ $content = replaceRE `!\[\[\s*[^\]\|\n]+\.(?:png|jpg|jpeg|gif|webp)\s*(?:\|[^\]]+)?\s*\]\]` "" $content }}
 
-    {{/* Resolve Obsidian [[filename]] (and [[filename|Alias]] / [[filename#Heading]]) to Hugo page URLs */}}
-    {{ range $match := findRE `(?m)(?:^|[^!])\[\[\s*[^\]\n]+\s*\]\]` $content }}
-      {{ $prefix := replaceRE `^(.*?)(\[\[.*)$` "$1" $match }}
-      {{ $inner := replaceRE `^.*?\[\[\s*(.*?)\s*\]\]$` "$1" $match }}
+    {{/* Resolve Obsidian [[filename]] / [[filename|Alias]] / [[filename#Heading]] to <a href="...">label</a> */}}
+    {{ range $rawMatch := findRE `(?m)(?:^|[^!])\[\[[^\]\n]+\]\]` $content }}
+      {{/* Strip any leading non-wikilink character captured before [[ */}}
+      {{ $leading := "" }}
+      {{ $wiki := $rawMatch }}
+      {{ if not (hasPrefix $rawMatch "[[") }}
+        {{ $leading = substr $rawMatch 0 1 }}
+        {{ $wiki = substr $rawMatch 1 (sub (len $rawMatch) 1) }}
+      {{ end }}
+
+      {{ $inner := strings.TrimSpace (strings.TrimSuffix "]]" (strings.TrimPrefix "[[" $wiki)) }}
 
       {{ $targetRaw := $inner }}
       {{ $alias := "" }}
@@ -60,17 +67,14 @@
         {{ $anchor = anchorize (strings.TrimSpace (index $hParts 1)) }}
       {{ end }}
 
-      {{/* Normalize path: strip /content/, content/, leading /, and .md */}}
       {{ $cleanPath := strings.TrimPrefix "/" (strings.TrimSuffix ".md" (strings.TrimPrefix "/content/" (strings.TrimPrefix "content/" $noteName))) }}
       {{ $wantSlug := urlize $cleanPath }}
 
-      {{/* 1. Direct path / page lookup (e.g. "section/filename") */}}
       {{ $targetPage := site.GetPage $cleanPath }}
       {{ if not $targetPage }}
         {{ $targetPage = $page.GetPage $cleanPath }}
       {{ end }}
 
-      {{/* 2. Search across site pages by filename (ContentBaseName), path, slug, or title */}}
       {{ if not $targetPage }}
         {{ $fallbackMatch := false }}
         {{ range site.RegularPages }}
@@ -105,21 +109,18 @@
       {{ $href := "" }}
       {{ if $targetPage }}
         {{ $href = $targetPage.RelPermalink }}
+      {{ else if and $page.Section (not (in $cleanPath "/")) }}
+        {{ $href = printf "/%s/%s/" $page.Section $wantSlug }}
       {{ else }}
-        {{/* If current page is in a section and note has no slash, try /<section>/<slug>/ */}}
-        {{ if and $page.Section (not (in $cleanPath "/")) }}
-          {{ $href = printf "/%s/%s/" $page.Section $wantSlug }}
-        {{ else }}
-          {{ $href = printf "/%s/" $wantSlug }}
-        {{ end }}
+        {{ $href = printf "/%s/" $wantSlug }}
       {{ end }}
 
       {{ if ne $anchor "" }}
         {{ $href = printf "%s#%s" $href $anchor }}
       {{ end }}
 
-      {{ $aTag := printf `%s<a href="%s">%s</a>` $prefix ($href | safeURL) $label }}
-      {{ $content = replace $content $match $aTag }}
+      {{ $replacement := printf `%s<a href="%s">%s</a>` $leading ($href | safeURL) $label }}
+      {{ $content = replace $content $rawMatch $replacement }}
     {{ end }}
 
     {{/* Render full markdown cleanly in one pass */}}
