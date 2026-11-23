@@ -9,15 +9,8 @@
   {{- $paginator := .Paginate $pages 10 -}}
   <ul class="post-list">
     {{- range $paginator.Pages -}}
-      {{- $words := split .Plain " " -}}
-      {{- $excerpt := delimit (first 30 $words) " " -}}
       <li>
-        <a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
-        {{- if $excerpt -}}
-          <p class="post-excerpt">
-            {{- $excerpt -}}{{- if gt (len $words) 30 -}}…{{- end -}}
-          </p>
-        {{- end -}}
+        {{- partial "page-summary.html" (dict "page" . "wordCount" 30) -}}
       </li>
     {{- end -}}
   </ul>
@@ -26,3 +19,5 @@
 {{- else -}}
   <p>No posts found.</p>
 {{- end -}}
+
+

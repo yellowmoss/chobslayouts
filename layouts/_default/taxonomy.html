@@ -1,24 +1,29 @@
-{{- define "main" -}}
+
+{{ define "main" }}
+
   <div class="text-flow">
-    <h1>{{ .Title }}</h1>
 
-    {{- with .Content -}}
-      <div class="section-intro">
-        {{ . }}
-      </div>
-    {{- end -}}
+  <h1>{{ .Title }}</h1>
 
-    {{- $isTaxonomy := eq .Kind "taxonomy" -}}
-    {{- $pages := cond $isTaxonomy .Pages.ByTitle .Pages.ByDate.Reverse -}}
+  {{- with .Content -}}
+    <div class="section-intro">
+      {{ . }}
+    </div>
+  {{- end -}}
 
-    {{- if $pages -}}
-      {{- $paginator := .Paginate $pages 12 -}}
+  {{- $terms := .Data.Terms.ByCount -}}
+  {{- if $terms -}}
+    <ul class="tag-list">
+      {{- range first 50 $terms -}}
+        <li>
+          <a href="{{ .Page.RelPermalink }}">{{ .Page.LinkTitle }}</a>
+        </li>
+      {{- end -}}
+    </ul>
+  {{- else -}}
+    <p>No tags found.</p>
+  {{- end -}}
 
-      {{- partial "post-list.html" $ -}}
-
-      {{- partial "pagination.html" $ -}}
-    {{- end -}}
   </div>
-{{- end -}}
 
-
+{{ end }}
