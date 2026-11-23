@@ -1,7 +1,7 @@
-
 {{ define "main" }}
 
   <div class="text-flow">
+
 
   <h1>{{ .Title }}</h1>
 
@@ -11,12 +11,13 @@
     </div>
   {{- end -}}
 
-  {{- $terms := .Data.Terms.ByCount -}}
+  {{- $terms := .Data.Terms.Alphabetical -}}
   {{- if $terms -}}
     <ul class="tag-list">
       {{- range first 50 $terms -}}
         <li>
           <a href="{{ .Page.RelPermalink }}">{{ .Page.LinkTitle }}</a>
+          <span class="tag-count">({{ len .Pages }})</span>
         </li>
       {{- end -}}
     </ul>
@@ -27,3 +28,4 @@
   </div>
 
 {{ end }}
+
