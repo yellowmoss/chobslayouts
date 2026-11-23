@@ -6,17 +6,31 @@
 {{- if $isExternal -}}
   <a href="{{ $dest | safeURL }}" target="_blank" rel="noopener noreferrer">{{ $text | safeHTML }}</a>
 {{- else -}}
-  {{- $cleanPath := strings.TrimSuffix ".md" (strings.TrimPrefix "./" $u.Path) -}}
-  {{- $page := .Page.GetPage $cleanPath -}}
+  {{- $rawPath := strings.TrimSuffix ".md" (strings.TrimPrefix "./" $u.Path) -}}
+  {{- $decodedPath := $rawPath | urlquery | replace "+" " " -}}
+  {{- $slugPath := lower (replace $decodedPath " " "-") -}}
+
+  {{- $page := .Page.GetPage $decodedPath -}}
+  {{- if not $page }}{{- $page = site.GetPage $decodedPath -}}{{- end -}}
+  {{- if not $page }}{{- $page = .Page.GetPage $slugPath -}}{{- end -}}
+  {{- if not $page }}{{- $page = site.GetPage $slugPath -}}{{- end -}}
+
+  {{- /* Fallback: match by file base name or title if note was moved/renamed */ -}}
   {{- if not $page -}}
-    {{- $page = site.GetPage $cleanPath -}}
+    {{- range site.RegularPages -}}
+      {{- $base := "" -}}
+      {{- with .File }}{{- $base = lower .ContentBaseName -}}{{- end -}}
+      {{- if or (eq $base (lower $decodedPath)) (eq (lower .Title) (lower $decodedPath)) (eq (lower .Slug) (lower $slugPath)) -}}
+        {{- $page = . -}}
+      {{- end -}}
+    {{- end -}}
   {{- end -}}
 
   {{- $href := $dest -}}
   {{- if $page -}}
     {{- $href = $page.RelPermalink -}}
     {{- if $u.Fragment -}}
-      {{- $href = printf "%s#%s" $href $u.Fragment -}}
+      {{- $href = printf "%s#%s" $href ($u.Fragment | anchorize) -}}
     {{- end -}}
   {{- else -}}
     {{- $href = $dest | relURL -}}
