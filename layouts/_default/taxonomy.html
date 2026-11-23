@@ -12,7 +12,7 @@
     {{- $pages := cond $isTaxonomy .Pages.ByTitle .Pages.ByDate.Reverse -}}
 
     {{- if $pages -}}
-      {{- $paginator := .Paginate $pages 10 -}}
+      {{- $paginator := .Paginate $pages 12 -}}
       <ul>
         {{- range $paginator.Pages -}}
           <li>
