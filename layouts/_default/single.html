@@ -39,39 +39,58 @@
     {{/* Clean up any remaining non-video Obsidian image tags */}}
     {{ $content = replaceRE `!\[\[\s*[^\]\|\n]+\.(?:png|jpg|jpeg|gif|webp)\s*(?:\|[^\]]+)?\s*\]\]` "" $content }}
 
-    {{/* Convert non-embed [[Wikilinks]] (with optional #heading and |alias) to standard Markdown links */}}
+    {{/* Resolve Obsidian [[filename]] (and [[filename|Alias]] / [[filename#Heading]]) directly to Hugo page URLs */}}
     {{ range $match := findRE `(?m)(?:^|[^!])\[\[\s*[^\]\n]+\s*\]\]` $content }}
       {{ $prefix := replaceRE `^(.*?)(\[\[.*)$` "$1" $match }}
-      {{ $linkBody := replaceRE `^.*?\[\[\s*(.*?)\s*\]\]$` "$1" $match }}
+      {{ $inner := replaceRE `^.*?\[\[\s*(.*?)\s*\]\]$` "$1" $match }}
 
-      {{ $targetPart := $linkBody }}
+      {{ $targetRaw := $inner }}
       {{ $alias := "" }}
-      {{ if in $linkBody "|" }}
-        {{ $parts := split $linkBody "|" }}
-        {{ $targetPart = strings.TrimSpace (index $parts 0) }}
+      {{ if in $inner "|" }}
+        {{ $parts := split $inner "|" }}
+        {{ $targetRaw = strings.TrimSpace (index $parts 0) }}
         {{ $alias = strings.TrimSpace (index $parts 1) }}
       {{ end }}
 
-      {{/* Separate note/path from optional #heading or ^block */}}
-      {{ $notePath := $targetPart }}
+      {{ $noteName := $targetRaw }}
       {{ $anchor := "" }}
-      {{ if in $targetPart "#" }}
-        {{ $hParts := split $targetPart "#" }}
-        {{ $notePath = strings.TrimSpace (index $hParts 0) }}
+      {{ if in $targetRaw "#" }}
+        {{ $hParts := split $targetRaw "#" }}
+        {{ $noteName = strings.TrimSpace (index $hParts 0) }}
         {{ $anchor = anchorize (strings.TrimSpace (index $hParts 1)) }}
       {{ end }}
 
-      {{/* Default label: alias if given, else targetPart (or notePath if targetPart was empty) */}}
-      {{ $label := cond (ne $alias "") $alias (cond (ne $notePath "") $notePath $targetPart) }}
+      {{/* Strip optional leading /content/ or trailing .md if present */}}
+      {{ $cleanName := strings.TrimSuffix ".md" (strings.TrimPrefix "/content/" (strings.TrimPrefix "content/" $noteName)) }}
 
-      {{/* URL-encode spaces in target so Goldmark doesn't break on spaces */}}
-      {{ $encodedTarget := replace $notePath " " "%20" }}
-      {{ if ne $anchor "" }}
-        {{ $encodedTarget = printf "%s#%s" $encodedTarget $anchor }}
+      {{/* Try direct path lookups first (e.g. "section/filename" or "filename") */}}
+      {{ $targetPage := site.GetPage $cleanName }}
+      {{ if not $targetPage }}
+        {{ $targetPage = $page.GetPage $cleanName }}
       {{ end }}
 
-      {{ $mdLink := printf `%s[%s](%s)` $prefix $label $encodedTarget }}
-      {{ $content = replace $content $match $mdLink }}
+      {{/* Fallback: match by filename (ContentBaseName), Title, or Slug across site pages */}}
+      {{ if not $targetPage }}
+        {{ range site.RegularPages }}
+          {{ $base := "" }}
+          {{ with .File }}{{ $base = .ContentBaseName }}{{ end }}
+          {{ if or (eq (lower $base) (lower $cleanName)) (eq (lower .Title) (lower $cleanName)) (eq (lower .Slug) (lower $cleanName)) }}
+            {{ $targetPage = . }}
+          {{ end }}
+        {{ end }}
+      {{ end }}
+
+      {{ $label := cond (ne $alias "") $alias $noteName }}
+      {{ $href := printf "/%s/" (urlize $cleanName) }}
+      {{ if $targetPage }}
+        {{ $href = $targetPage.RelPermalink }}
+      {{ end }}
+      {{ if ne $anchor "" }}
+        {{ $href = printf "%s#%s" $href $anchor }}
+      {{ end }}
+
+      {{ $aTag := printf `%s<a href="%s">%s</a>` $prefix ($href | safeURL) $label }}
+      {{ $content = replace $content $match $aTag }}
     {{ end }}
 
     {{/* Render full markdown cleanly in one pass */}}
@@ -155,5 +174,3 @@
     {{ end }}
 </article>
 {{ end }}
-
-
