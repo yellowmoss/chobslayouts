@@ -1,31 +1,22 @@
 {{ define "main" }}
-
   <div class="text-flow">
-
-
   <h1>{{ .Title }}</h1>
-
+  <h1>Tag listing</h1>
   {{- with .Content -}}
     <div class="section-intro">
       {{ . }}
     </div>
   {{- end -}}
-
   {{- $terms := .Data.Terms.Alphabetical -}}
   {{- if $terms -}}
-    <ul class="tag-list">
+    <div class="tag-list">
       {{- range first 50 $terms -}}
-        <li>
           <a href="{{ .Page.RelPermalink }}">{{ .Page.LinkTitle }}</a>
           <span class="tag-count">({{ len .Pages }})</span>
-        </li>
       {{- end -}}
-    </ul>
+    </div>
   {{- else -}}
     <p>No tags found.</p>
   {{- end -}}
-
   </div>
-
 {{ end }}
-
