@@ -1,22 +1,34 @@
 {{- $page := .page | default . -}}
 {{- $limit := .wordCount | default 30 -}}
 
+{{- /* Parse content first so render-image.html populates .Page.Store */ -}}
+{{- $renderedContent := $page.Content -}}
+{{- $thumb := $page.Store.Get "summary_thumb" -}}
+
 {{- $cleanText := replaceRE `\s+` " " (trim $page.Plain " \n\r\t") -}}
 {{- $words := split $cleanText " " -}}
 {{- $excerpt := delimit (first $limit $words) " " -}}
 
 <article class="page-summary">
-  <h2 class="page-summary-title">
-    <a href="{{ $page.RelPermalink }}">{{ $page.LinkTitle }}</a>
-  </h2>
-  {{- if not $page.Date.IsZero -}}
-    <time class="page-summary-date" datetime="{{ $page.Date.Format "2006-01-02" }}">
-      {{ $page.Date.Format "Jan 2, 2006" }}
-    </time>
+  {{- with $thumb -}}
+    <a class="page-summary-thumb" href="{{ $page.RelPermalink }}">
+      <img src="{{ .src }}" alt="{{ .alt | default $page.LinkTitle }}" loading="lazy" />
+    </a>
   {{- end -}}
-  {{- if $excerpt -}}
-    <p class="page-summary-excerpt">
-      {{- $excerpt -}}{{- if gt (len $words) $limit -}}…{{- end -}}
-    </p>
-  {{- end -}}
+  <div class="page-summary-body">
+    <h2 class="page-summary-title">
+      <a href="{{ $page.RelPermalink }}">{{ $page.LinkTitle }}</a>
+    </h2>
+    {{- if not $page.Date.IsZero -}}
+      <time class="page-summary-date" datetime="{{ $page.Date.Format "2006-01-02" }}">
+        {{ $page.Date.Format "Jan 2, 2006" }}
+      </time>
+    {{- end -}}
+    {{- if $excerpt -}}
+      <p class="page-summary-excerpt">
+        {{- $excerpt -}}{{- if gt (len $words) $limit -}}…{{- end -}}
+      </p>
+    {{- end -}}
+  </div>
 </article>
+

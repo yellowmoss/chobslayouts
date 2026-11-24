@@ -1,6 +1,4 @@
 {{- $dest := .Destination -}}
-
-
 {{- $isMP3 := strings.HasSuffix (lower $dest) ".mp3" -}}
 
 {{- if $isMP3 -}}
@@ -159,16 +157,9 @@
       });
   })();
   </script>
-{{- else -}}
-  <!-- Your existing image render hook code goes here -->
+  {{- return -}}
 {{- end -}}
 
-
-
-
-
-
-{{- $dest := .Destination -}}
 {{- if or (strings.Contains $dest "vimeo.com/") (strings.Contains $dest "player.vimeo.com/video/") -}}
   {{- $clean := strings.TrimSuffix "/" (index (split $dest "?") 0) -}}
   {{- $videoId := index (last 1 (split $clean "/")) 0 -}}
@@ -207,48 +198,47 @@
   {{- return -}}
 {{- end -}}
 
+{{- $res := .Page.Resources.Get $dest -}}
+{{- if not $res -}}
+  {{- $res = resources.Get (print "/assets/" $dest) -}}
+{{- end -}}
+{{- if not $res -}}
+  {{- $res = resources.Get $dest -}}
+{{- end -}}
 
+{{- if $res -}}
+  {{- /* 1. Handle Thumbnail (never upscale if smaller than 1000px) */ -}}
+  {{- $thumb := "" -}}
+  {{- if gt $res.Width 1000 -}}
+    {{- $thumb = $res.Resize "320x webp q85" -}}
+  {{- else -}}
+    {{- $thumb = $res.Process "webp q85" -}}
+  {{- end -}}
 
+  {{- /* Save the first processed thumbnail for page-summary.html */ -}}
+  {{- if not (.Page.Store.Get "summary_thumb") -}}
+    {{- .Page.Store.Set "summary_thumb" (dict "src" $thumb.RelPermalink "alt" .Text) -}}
+  {{- end -}}
 
-
-
-
-
-{{ $res := .Page.Resources.Get $dest }}
-
-{{ if not $res }}
-  {{ $res = resources.Get (print "/assets/" $dest) }}
-{{ end }}
-{{ if not $res }}
-  {{ $res = resources.Get $dest }}
-{{ end }}
-
-{{ if $res }}
-  {{/* 1. Handle Thumbnail (never upscale if smaller than 1000px) */}}
-  {{ $thumb := "" }}
-  {{ if gt $res.Width 1000 }}
-    {{ $thumb = $res.Resize "320x webp q85" }}
-  {{ else }}
-    {{/* If smaller, convert to webp/optimize without forcing a size increase */}}
-    {{ $thumb = $res.Process "webp q85" }}
-  {{ end }}
-
-  {{/* 2. Handle Lightbox Large Image (never upscale if smaller than 1600px) */}}
-  {{ $large := "" }}
-  {{ if gt $res.Width 1600 }}
-    {{ $large = $res.Resize "1600x webp q90" }}
-  {{ else }}
-    {{ $large = $res.Process "webp q90" }}
-  {{ end }}
+  {{- /* 2. Handle Lightbox Large Image (never upscale if smaller than 1600px) */ -}}
+  {{- $large := "" -}}
+  {{- if gt $res.Width 1600 -}}
+    {{- $large = $res.Resize "1600x webp q90" -}}
+  {{- else -}}
+    {{- $large = $res.Process "webp q90" -}}
+  {{- end -}}
 
   <figure class="post-image-item">
     <a href="{{ $large.RelPermalink }}" class="glightbox" data-gallery="gallery-{{ .Page.File.UniqueID }}">
       <img src="{{ $thumb.RelPermalink }}" alt="{{ .Text }}" loading="lazy" />
     </a>
-    {{ if .Text }}
+    {{- if .Text -}}
       <figcaption>{{ .Text }}</figcaption>
-    {{ end }}
+    {{- end -}}
   </figure>
-{{ else }}
+{{- else -}}
+  {{- if not (.Page.Store.Get "summary_thumb") -}}
+    {{- .Page.Store.Set "summary_thumb" (dict "src" $dest "alt" .Text) -}}
+  {{- end -}}
   <img src="{{ $dest }}" alt="{{ .Text }}" loading="lazy" />
-{{ end }}
+{{- end -}}
