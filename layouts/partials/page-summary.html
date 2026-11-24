@@ -1,7 +1,7 @@
 {{- $page := .page | default . -}}
 {{- $limit := .wordCount | default 30 -}}
 
-{{- /* Parse content first so render-image.html populates .Page.Store */ -}}
+{{- /* Ensure content is parsed so render-image.html runs before reading summary_thumb */ -}}
 {{- $renderedContent := $page.Content -}}
 {{- $thumb := $page.Store.Get "summary_thumb" -}}
 
@@ -12,7 +12,13 @@
 <article class="page-summary">
   {{- with $thumb -}}
     <a class="page-summary-thumb" href="{{ $page.RelPermalink }}">
-      <img src="{{ .src }}" alt="{{ .alt | default $page.LinkTitle }}" loading="lazy" />
+      <img
+        src="{{ .src }}"
+        alt="{{ .alt }}"
+        width="{{ .width | default 320 }}"
+        height="{{ .height | default 320 }}"
+        loading="lazy"
+      />
     </a>
   {{- end -}}
   <div class="page-summary-body">
@@ -31,4 +37,3 @@
     {{- end -}}
   </div>
 </article>
-

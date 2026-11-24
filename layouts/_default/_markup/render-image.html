@@ -1,10 +1,23 @@
 {{- $dest := .Destination -}}
-{{- $isMP3 := strings.HasSuffix (lower $dest) ".mp3" -}}
+{{- $alt := strings.TrimSpace (.Text | default "") -}}
+{{- $page := .Page -}}
 
+{{- /* Helper to store a 320x320 square summary thumbnail once per page */ -}}
+{{- define "partials/store-summary-thumb.html" -}}
+  {{- $page := .page -}}
+  {{- $res := .res -}}
+  {{- $alt := .alt -}}
+  {{- if and $res (not ($page.Store.Get "summary_thumb")) -}}
+    {{- $sq := $res.Fill "320x320 Smart webp q85" -}}
+    {{- $page.Store.Set "summary_thumb" (dict "src" $sq.RelPermalink "alt" ($alt | default $page.LinkTitle) "width" $sq.Width "height" $sq.Height) -}}
+  {{- end -}}
+{{- end -}}
+
+{{- $isMP3 := strings.HasSuffix (lower $dest) ".mp3" -}}
 {{- if $isMP3 -}}
   {{- $src := $dest -}}
   {{- if not (or (hasPrefix $dest "http://") (hasPrefix $dest "https://") (hasPrefix $dest "/")) -}}
-    {{- with .Page.Resources.Get $dest -}}
+    {{- with $page.Resources.Get $dest -}}
       {{- $src = .RelPermalink -}}
     {{- else -}}
       {{- with resources.Get $dest -}}
@@ -13,10 +26,10 @@
     {{- end -}}
   {{- end -}}
 
-  {{- $uid := printf "mp3-%s" (md5 (printf "%s-%s" .Page.RelPermalink $src)) -}}
+  {{- $uid := printf "mp3-%s" (md5 (printf "%s-%s" $page.RelPermalink $src)) -}}
 
   <figure class="mp3-card" id="{{ $uid }}" data-audio-src="{{ $src | safeURL }}">
-    <img class="mp3-cover" alt="{{ with .Text }}{{ . }}{{ else }}Audio cover art{{ end }}" style="display:none; max-width:240px; border-radius:8px;" />
+    <img class="mp3-cover" alt="{{ with $alt }}{{ . }}{{ else }}Audio cover art{{ end }}" style="display:none; max-width:240px; border-radius:8px;" />
     <audio class="mp3-player" src="{{ $src | safeURL }}" preload="metadata"></audio>
     <div class="mp3-controls" style="margin-top:0.5rem; display:flex; gap:0.5rem;">
       <button type="button" class="mp3-play">Play</button>
@@ -73,7 +86,6 @@
 
     function extractID3Cover(arrayBuffer) {
       const bytes = new Uint8Array(arrayBuffer);
-      // Check "ID3" header
       if (bytes.length < 10 || bytes[0] !== 0x49 || bytes[1] !== 0x44 || bytes[2] !== 0x33) {
         return null;
       }
@@ -83,7 +95,6 @@
       const end = Math.min(bytes.length, 10 + tagSize);
       let pos = 10;
 
-      // Skip extended header if flag bit 6 is set (ID3v2.3 / v2.4)
       if ((bytes[5] & 0x40) !== 0 && pos + 4 <= end) {
         const extSize = majorVersion === 4
           ? decodeSynchsafe(bytes[pos], bytes[pos + 1], bytes[pos + 2], bytes[pos + 3])
@@ -108,17 +119,15 @@
           const textEncoding = bytes[i];
           i += 1;
 
-          // Read null-terminated MIME type (ISO-8859-1)
           const mimeStart = i;
           while (i < dataEnd && bytes[i] !== 0x00) i += 1;
           let mimeType = new TextDecoder("latin1").decode(bytes.subarray(mimeStart, i));
           if (!mimeType) mimeType = "image/jpeg";
-          i += 1; // skip null byte
+          i += 1;
 
           if (i >= dataEnd) break;
-          i += 1; // skip picture type byte
+          i += 1;
 
-          // Skip description (terminated by 0x00 for latin1/utf-8, or 0x00 0x00 for utf-16)
           if (textEncoding === 1 || textEncoding === 2) {
             while (i + 1 < dataEnd && !(bytes[i] === 0x00 && bytes[i + 1] === 0x00)) {
               i += 2;
@@ -152,9 +161,7 @@
           img.style.display = "block";
         }
       })
-      .catch(() => {
-        // Leave cover hidden if no APIC frame or fetch fails
-      });
+      .catch(() => {});
   })();
   </script>
   {{- return -}}
@@ -163,15 +170,11 @@
 {{- if or (strings.Contains $dest "vimeo.com/") (strings.Contains $dest "player.vimeo.com/video/") -}}
   {{- $clean := strings.TrimSuffix "/" (index (split $dest "?") 0) -}}
   {{- $videoId := index (last 1 (split $clean "/")) 0 -}}
-  {{- $rawAlt := strings.TrimSpace (.Text | default "") -}}
-
-  {{- /* Default fallback dimensions */ -}}
   {{- $w := "1920" -}}
   {{- $h := "1080" -}}
   {{- $title := "sandyride" -}}
 
-  {{- /* Extract WxH from alt text, e.g. "1920x1080" or "1920x1080 My Title" */ -}}
-  {{- $match := findRESubmatch `^(\d+)\s*[xX]\s*(\d+)(?:\s+(.*))?$` $rawAlt 1 -}}
+  {{- $match := findRESubmatch `^(\d+)\s*[xX]\s*(\d+)(?:\s+(.*))?$` $alt 1 -}}
   {{- if gt (len $match) 0 -}}
     {{- $parts := index $match 0 -}}
     {{- $w = index $parts 1 -}}
@@ -182,8 +185,28 @@
         {{- $title = $extra -}}
       {{- end -}}
     {{- end -}}
-  {{- else if ne $rawAlt "" -}}
-    {{- $title = $rawAlt -}}
+  {{- else if ne $alt "" -}}
+    {{- $title = $alt -}}
+  {{- end -}}
+
+  {{- /* Fetch Vimeo thumbnail via oEmbed, falling back to Vumbnail */ -}}
+  {{- $watchURL := printf "https://vimeo.com/%s" $videoId -}}
+  {{- $oembedURL := printf "https://vimeo.com/api/oembed.json?url=%s" ($watchURL | urlquery) -}}
+  {{- $thumbURL := printf "https://vumbnail.com/%s.jpg" $videoId -}}
+
+  {{- with try (resources.GetRemote $oembedURL (dict "key" (printf "vimeo-oembed-%s" $videoId))) -}}
+    {{- if and (not .Err) .Value -}}
+      {{- $meta := .Value.Content | transform.Unmarshal -}}
+      {{- with $meta.thumbnail_url -}}
+        {{- $thumbURL = . -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- with try (resources.GetRemote $thumbURL (dict "key" (printf "vimeo-thumb-%s" $videoId))) -}}
+    {{- if and (not .Err) .Value -}}
+      {{- partial "store-summary-thumb.html" (dict "page" $page "res" .Value "alt" $title) -}}
+    {{- end -}}
   {{- end -}}
 
   <div class="vimeo-stage" style="--nat-w: {{ $w }}; --nat-h: {{ $h }};">
@@ -198,7 +221,7 @@
   {{- return -}}
 {{- end -}}
 
-{{- $res := .Page.Resources.Get $dest -}}
+{{- $res := $page.Resources.Get $dest -}}
 {{- if not $res -}}
   {{- $res = resources.Get (print "/assets/" $dest) -}}
 {{- end -}}
@@ -207,7 +230,8 @@
 {{- end -}}
 
 {{- if $res -}}
-  {{- /* 1. Handle Thumbnail (never upscale if smaller than 1000px) */ -}}
+  {{- partial "store-summary-thumb.html" (dict "page" $page "res" $res "alt" $alt) -}}
+
   {{- $thumb := "" -}}
   {{- if gt $res.Width 1000 -}}
     {{- $thumb = $res.Resize "320x webp q85" -}}
@@ -215,12 +239,6 @@
     {{- $thumb = $res.Process "webp q85" -}}
   {{- end -}}
 
-  {{- /* Save the first processed thumbnail for page-summary.html */ -}}
-  {{- if not (.Page.Store.Get "summary_thumb") -}}
-    {{- .Page.Store.Set "summary_thumb" (dict "src" $thumb.RelPermalink "alt" .Text) -}}
-  {{- end -}}
-
-  {{- /* 2. Handle Lightbox Large Image (never upscale if smaller than 1600px) */ -}}
   {{- $large := "" -}}
   {{- if gt $res.Width 1600 -}}
     {{- $large = $res.Resize "1600x webp q90" -}}
@@ -229,16 +247,14 @@
   {{- end -}}
 
   <figure class="post-image-item">
-    <a href="{{ $large.RelPermalink }}" class="glightbox" data-gallery="gallery-{{ .Page.File.UniqueID }}">
-      <img src="{{ $thumb.RelPermalink }}" alt="{{ .Text }}" loading="lazy" />
+    <a href="{{ $large.RelPermalink }}" class="glightbox" data-gallery="gallery-{{ $page.File.UniqueID }}">
+      <img src="{{ $thumb.RelPermalink }}" alt="{{ $alt }}" loading="lazy" />
     </a>
-    {{- if .Text -}}
-      <figcaption>{{ .Text }}</figcaption>
+    {{- if $alt -}}
+      <figcaption>{{ $alt }}</figcaption>
     {{- end -}}
   </figure>
 {{- else -}}
-  {{- if not (.Page.Store.Get "summary_thumb") -}}
-    {{- .Page.Store.Set "summary_thumb" (dict "src" $dest "alt" .Text) -}}
-  {{- end -}}
-  <img src="{{ $dest }}" alt="{{ .Text }}" loading="lazy" />
+  <img src="{{ $dest }}" alt="{{ $alt }}" loading="lazy" />
 {{- end -}}
+
