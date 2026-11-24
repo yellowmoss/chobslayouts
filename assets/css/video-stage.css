@@ -219,8 +219,8 @@ video {
   justify-content: center;
   width: var(--thumb-size, 200px);
   height: var(--thumb-size, 200px);
-  max-width: 320px;
-  max-height: 320px;
+  max-width: 480px;
+  max-height: 480px;
   background-color: #e5e7eb; /* grey fill for remaining space */
   overflow: hidden;
 }
