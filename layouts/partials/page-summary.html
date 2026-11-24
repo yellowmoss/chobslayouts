@@ -10,17 +10,36 @@
 {{- $excerpt := delimit (first $limit $words) " " -}}
 
 <article class="page-summary">
-  {{- with $thumb -}}
-    <a class="page-summary-thumb" href="{{ $page.RelPermalink }}">
+
+
+
+{{- with $thumb -}}
+    {{- $w := .width | default 200 -}}
+    {{- $h := .height | default 150 -}}
+    {{- $maxDim := cond (gt $w $h) $w $h -}}
+    {{- if gt $maxDim 320 -}}{{- $maxDim = 320 -}}{{- end -}}
+    <a
+      class="page-summary-thumb"
+      href="{{ $page.RelPermalink }}"
+      style="--thumb-size: {{ $maxDim }}px;"
+    >
       <img
         src="{{ .src }}"
         alt="{{ .alt }}"
-        width="{{ .width | default 320 }}"
-        height="{{ .height | default 320 }}"
+        {{- if and (gt $w 0) (gt $h 0) }}
+          width="{{ $w }}"
+          height="{{ $h }}"
+        {{- end }}
         loading="lazy"
       />
     </a>
   {{- end -}}
+
+
+
+
+
+
   <div class="page-summary-body">
     <h2 class="page-summary-title">
       <a href="{{ $page.RelPermalink }}">{{ $page.LinkTitle }}</a>
