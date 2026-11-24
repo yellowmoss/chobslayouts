@@ -214,25 +214,15 @@ video {
 }
 
 .page-summary-thumb {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--thumb-size, 200px);
-  height: var(--thumb-size, 200px);
-  max-width: 480px;
-  max-height: 480px;
-  background-color: #e5e7eb; /* grey fill for remaining space */
-  overflow: hidden;
+  display: inline-block;
 }
 
 .page-summary-thumb img {
   display: block;
   width: auto;
   height: auto;
-  max-width: 100%;
-  max-height: 100%;
+  max-width: 200px;
+  max-height: 200px;
 }
-
-
 
 

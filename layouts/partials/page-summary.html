@@ -14,26 +14,21 @@
 
 
 {{- with $thumb -}}
-    {{- $w := .width | default 200 -}}
-    {{- $h := .height | default 150 -}}
-    {{- $maxDim := cond (gt $w $h) $w $h -}}
-    {{- if gt $maxDim 320 -}}{{- $maxDim = 320 -}}{{- end -}}
-    <a
-      class="page-summary-thumb"
-      href="{{ $page.RelPermalink }}"
-      style="--thumb-size: {{ $maxDim }}px;"
-    >
+    <a class="page-summary-thumb" href="{{ $page.RelPermalink }}">
       <img
         src="{{ .src }}"
         alt="{{ .alt }}"
-        {{- if and (gt $w 0) (gt $h 0) }}
-          width="{{ $w }}"
-          height="{{ $h }}"
+        {{- if and .width .height (gt .width 0) (gt .height 0) }}
+          width="{{ .width }}"
+          height="{{ .height }}"
         {{- end }}
         loading="lazy"
       />
     </a>
   {{- end -}}
+
+
+
 
 
 
