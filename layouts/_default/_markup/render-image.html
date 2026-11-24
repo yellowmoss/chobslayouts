@@ -2,15 +2,25 @@
 {{- $alt := strings.TrimSpace (.Text | default "") -}}
 {{- $page := .Page -}}
 
+{{- /* Normalize internal content paths like "content/videos/2026/filename" */ -}}
+{{- $lookupDest := $dest -}}
+{{- if hasPrefix $lookupDest "content/" -}}
+  {{- $lookupDest = strings.TrimPrefix "content/" $lookupDest -}}
+{{- end -}}
+
 {{- $isMP3 := strings.HasSuffix (lower $dest) ".mp3" -}}
 {{- if $isMP3 -}}
   {{- $src := $dest -}}
   {{- if not (or (hasPrefix $dest "http://") (hasPrefix $dest "https://") (hasPrefix $dest "/")) -}}
-    {{- with $page.Resources.Get $dest -}}
+    {{- with $page.Resources.Get $lookupDest -}}
       {{- $src = .RelPermalink -}}
     {{- else -}}
-      {{- with resources.Get $dest -}}
+      {{- with resources.Get $lookupDest -}}
         {{- $src = .RelPermalink -}}
+      {{- else -}}
+        {{- with $page.Site.GetPage $lookupDest -}}
+          {{- $src = .RelPermalink -}}
+        {{- end -}}
       {{- end -}}
     {{- end -}}
   {{- end -}}
@@ -134,12 +144,19 @@
   {{- return -}}
 {{- end -}}
 
-{{- $res := $page.Resources.Get $dest -}}
+{{- $res := $page.Resources.Get $lookupDest -}}
 {{- if not $res -}}
-  {{- $res = resources.Get (print "/assets/" $dest) -}}
+  {{- $res = resources.Get (print "/assets/" $lookupDest) -}}
 {{- end -}}
 {{- if not $res -}}
-  {{- $res = resources.Get $dest -}}
+  {{- $res = resources.Get $lookupDest -}}
+{{- end -}}
+{{- if and (not $res) (hasPrefix $dest "content/") -}}
+  {{- $dir := path.Dir $lookupDest -}}
+  {{- $base := path.Base $lookupDest -}}
+  {{- with $page.Site.GetPage $dir -}}
+    {{- $res = .Resources.Get $base -}}
+  {{- end -}}
 {{- end -}}
 
 {{- if $res -}}
@@ -166,5 +183,13 @@
     {{- end -}}
   </figure>
 {{- else -}}
-  <img src="{{ $dest }}" alt="{{ $alt }}" loading="lazy" />
+  {{- $fallbackDest := $dest -}}
+  {{- if hasPrefix $dest "content/" -}}
+    {{- with $page.Site.GetPage $lookupDest -}}
+      {{- $fallbackDest = .RelPermalink -}}
+    {{- else -}}
+      {{- $fallbackDest = printf "/%s" $lookupDest -}}
+    {{- end -}}
+  {{- end -}}
+  <img src="{{ $fallbackDest }}" alt="{{ $alt }}" loading="lazy" />
 {{- end -}}
