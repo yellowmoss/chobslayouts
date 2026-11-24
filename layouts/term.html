@@ -1,10 +1,6 @@
-
-
 {{ define "main" }}
   <div class="text-flow">
-
   <h1>{{ .Title }}</h1>
-
   {{- with .Content -}}
     <div class="section-intro">
       {{ . }}
@@ -24,7 +20,5 @@
   {{- else -}}
     <p>No pages found for this term.</p>
   {{- end -}}
-
     </div>
-
 {{ end }}
