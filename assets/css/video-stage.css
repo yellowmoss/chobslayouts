@@ -212,5 +212,16 @@ video {
     height: 100%;
     border: 0;
 }
+.page-summary-thumb {
+  display: inline-block; /* shrinks to image size instead of stretching full-width */
+}
 
+.page-summary-thumb img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 320px;
+  max-height: 320px;
+  object-fit: cover;
+}
 
