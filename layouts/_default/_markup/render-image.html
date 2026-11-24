@@ -84,7 +84,12 @@
     {{- $title = $alt -}}
   {{- end -}}
 
-  {{- /* Fetch Vimeo thumbnail via oEmbed, falling back to Vumbnail */ -}}
+
+
+
+
+
+{{- /* Fetch Vimeo thumbnail via oEmbed, falling back to Vumbnail — crop to square without resizing */ -}}
   {{- $watchURL := printf "https://vimeo.com/%s" $videoId -}}
   {{- $oembedURL := printf "https://vimeo.com/api/oembed.json?url=%s" ($watchURL | urlquery) -}}
   {{- $thumbURL := printf "https://vumbnail.com/%s.jpg" $videoId -}}
@@ -99,9 +104,14 @@
   {{- end -}}
 
   {{- if not ($page.Store.Get "summary_thumb") -}}
-    {{- with try (resources.GetRemote $thumbURL (dict "key" (printf "vimeo-thumb-%s" $videoId))) -}}
+    {{- with try (resources.GetRemote $thumbURL (dict "key" (printf "vimeo-thumb-crop-%s" $videoId))) -}}
       {{- if and (not .Err) .Value -}}
-        {{- $sq := .Value.Fill "320x320 Smart lanczos webp q85" -}}
+        {{- $raw := .Value -}}
+        {{- $sq := $raw -}}
+        {{- if and (gt $raw.Width 0) (gt $raw.Height 0) -}}
+          {{- $side := cond (lt $raw.Width $raw.Height) $raw.Width $raw.Height -}}
+          {{- $sq = $raw.Crop (printf "%dx%d Smart" $side $side) -}}
+        {{- end -}}
         {{- $page.Store.Set "summary_thumb" (dict
             "src" $sq.RelPermalink
             "alt" ($title | default $page.LinkTitle)
@@ -111,6 +121,11 @@
       {{- end -}}
     {{- end -}}
   {{- end -}}
+
+
+
+
+
 
   <div class="vimeo-stage" style="--nat-w: {{ $w }}; --nat-h: {{ $h }};">
     <iframe
