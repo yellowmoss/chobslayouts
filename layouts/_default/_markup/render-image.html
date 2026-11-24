@@ -93,7 +93,7 @@
   {{- $oembedURL := printf "https://vimeo.com/api/oembed.json?url=%s&width=480" ($watchURL | urlquery) -}}
   {{- $thumbURL := printf "https://vumbnail.com/%s.jpg" $videoId -}}
 
-  {{- with try (resources.GetRemote $oembedURL (dict "key" (printf "vimeo-oembed-v2-480-%s" $videoId))) -}}
+  {{- with try (resources.GetRemote $oembedURL (dict "key" (printf "vimeo-oembed-custom-480-%s" $videoId))) -}}
     {{- if and (not .Err) .Value -}}
       {{- $meta := .Value.Content | transform.Unmarshal -}}
       {{- with $meta.thumbnail_url -}}
@@ -103,10 +103,9 @@
   {{- end -}}
 
   {{- if not ($page.Store.Get "summary_thumb") -}}
-    {{- with try (resources.GetRemote $thumbURL (dict "key" (printf "vimeo-thumb-v2-480-%s" $videoId))) -}}
+    {{- with try (resources.GetRemote $thumbURL (dict "key" (printf "vimeo-thumb-custom-480-%s" $videoId))) -}}
       {{- if and (not .Err) .Value -}}
         {{- $raw := .Value -}}
-        {{- warnf "Vimeo thumb [%s]: %dx%d from %s" $videoId $raw.Width $raw.Height $thumbURL -}}
         {{- $page.Store.Set "summary_thumb" (dict
             "src" $raw.RelPermalink
             "alt" ($title | default $page.LinkTitle)
@@ -116,13 +115,6 @@
       {{- end -}}
     {{- end -}}
   {{- end -}}
-
-
-
-
-
-
-
 
 
 
